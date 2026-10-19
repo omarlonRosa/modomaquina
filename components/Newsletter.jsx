@@ -28,12 +28,12 @@ export default function Newsletter({ origem = 'site', compacto = false }) {
   return (
     <div className={`news${compacto ? ' compacto' : ''}`}>
       <div className="news-txt">
-        <span className="kick o">Newsletter</span>
+        <span className="kick o">Modo Máquina Semanal · Newsletter</span>
         <h3>O melhor da semana <span className="o">no seu e-mail.</span></h3>
         <p>Todo domingo: as notícias que importam pro Brasil, um caso real da oficina e uma dica de manutenção. Leitura de 5 minutos, sem spam.</p>
       </div>
       {estado === 'ok' ? (
-        <p className="news-ok">✅ Pronto! Você está na lista. A primeira edição chega no domingo.</p>
+        <p className="news-ok">✅ Pronto! Você está na lista do Modo Máquina Semanal. A primeira edição chega no domingo.</p>
       ) : (
         <form className="news-form" onSubmit={enviar} noValidate>
           <div className="news-row">
