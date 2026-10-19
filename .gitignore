@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+.vercel
+.env*
+.DS_Store
+.wrangler
+
+# Arquivos internos do Modo Máquina: ficam só no Mac, nunca vão pro GitHub
+studio/
+brutos/
+Brutos/
+Claude outputs/
+gitignore.txt
+*.command

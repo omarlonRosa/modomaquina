@@ -1,0 +1,16 @@
+# Cabeçalhos de segurança aplicados pelo Cloudflare a todas as páginas.
+# Os domínios do Google AdSense estão liberados no Content-Security-Policy.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://*.googlesyndication.com https://*.googleadservices.com https://*.doubleclick.net https://*.google.com https://*.google.com.br https://*.gstatic.com https://*.adtrafficquality.google https://fundingchoicesmessages.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self'; connect-src 'self' https://*.googlesyndication.com https://*.googleadservices.com https://*.doubleclick.net https://*.google.com https://*.google.com.br https://*.gstatic.com https://*.adtrafficquality.google https://fundingchoicesmessages.google.com; frame-src https://*.googlesyndication.com https://*.googleadservices.com https://*.doubleclick.net https://*.google.com https://*.google.com.br https://*.gstatic.com https://*.adtrafficquality.google https://fundingchoicesmessages.google.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+
+/media/*
+  Cross-Origin-Resource-Policy: same-site
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -1,0 +1,12 @@
+{
+  // Modo Máquina: site 100% estático (Next.js com output: 'export').
+  // O build gera a pasta out/, e o Cloudflare só publica esses arquivos.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "modomaquina",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./out",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  }
+}
