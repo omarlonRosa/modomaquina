@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { AdSlot, Cover, Meta, PostCard } from '@/components/ui';
+import Newsletter from '@/components/Newsletter';
 import { EDITORIAS, SITE, editoria, sortedPosts } from '@/lib/content';
 
 export const metadata = { alternates: { canonical: '/' } };
@@ -32,6 +33,8 @@ export default function Home() {
         </div>
       </section>
 
+      <Newsletter origem="home" />
+
       <section className="sec">
         <h2 className="t">Editorias</h2>
         <div className="eds">
@@ -49,7 +52,7 @@ export default function Home() {
         <div className="cta">
           <div>
             <h3>Ative o <span className="o">modo máquina.</span></h3>
-            <p>Conteúdo novo toda semana no Instagram. Newsletter e comunidade no WhatsApp chegando em breve.</p>
+            <p>Conteúdo novo toda semana no Instagram. Comunidade no WhatsApp chegando em breve.</p>
           </div>
           <a className="btn" href={SITE.instagram} target="_blank" rel="noopener">Seguir @modomaquina.br</a>
         </div>

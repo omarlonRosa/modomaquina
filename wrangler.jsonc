@@ -1,12 +1,23 @@
 {
-  // Modo Máquina: site 100% estático (Next.js com output: 'export').
-  // O build gera a pasta out/, e o Cloudflare só publica esses arquivos.
+  // Modo Máquina: site estático (Next.js com output: 'export') + um Worker pequeno
+  // que só responde em /api/* (newsletter). Todo o resto é servido direto da pasta out/.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "modomaquina",
+  "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./out",
+    "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "html_handling": "auto-trailing-slash"
-  }
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "modomaquina-newsletter",
+      "database_id": "b4bd1351-7a92-4215-8897-d232a27598d9"
+    }
+  ],
+  "observability": { "enabled": true }
 }

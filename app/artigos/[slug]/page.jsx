@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Newsletter from '@/components/Newsletter';
 import { notFound } from 'next/navigation';
 import { AdSlot, Meta, PostCard } from '@/components/ui';
 import { POSTS, SITE, editoria, getPost, sortedPosts } from '@/lib/content';
@@ -93,6 +94,7 @@ export default async function Article({ params }) {
               <ul>{post.sources.map((s) => <li key={s.url}><a href={s.url} target="_blank" rel="noopener nofollow">{s.label}</a></li>)}</ul>
             </div>
           )}
+          <Newsletter origem={`artigo:${post.slug}`} />
           <div className="share">
             <a className="btn" href={SITE.instagram} target="_blank" rel="noopener">Comentar no Instagram</a>
             <a className="btn ghost" href={`https://wa.me/?text=${encodeURIComponent(post.title + ' — ' + SITE.url + '/artigos/' + post.slug)}`} target="_blank" rel="noopener">Mandar no WhatsApp</a>
