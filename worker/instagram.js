@@ -116,8 +116,16 @@ export async function situacao(env) {
     regs = (await env.DB.prepare('SELECT id, status, tentativas, erro, atualizado_em FROM ig_publicados').all()).results || [];
   }
   const mapa = Object.fromEntries(regs.map((r) => [r.id, r]));
+  let conta = null;
+  if (configurado && env.DB) {
+    try {
+      const d = await chamar('me', { fields: 'username,account_type', access_token: await token(env) }, 'GET');
+      conta = { usuario: d.username, tipo: d.account_type };
+    } catch (e) { conta = { erro: String(e.message).slice(0, 200) }; }
+  }
   return {
     configurado,
+    conta,
     fila: FILA.map((p) => ({ id: p.id, tipo: p.tipo, publicar_em: p.publicar_em, ...(mapa[p.id] ? { status: mapa[p.id].status, tentativas: mapa[p.id].tentativas, erro: mapa[p.id].erro } : { status: 'aguardando' }) })),
   };
 }
