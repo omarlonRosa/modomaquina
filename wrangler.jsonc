@@ -19,8 +19,8 @@
       "database_id": "b4bd1351-7a92-4215-8897-d232a27598d9"
     }
   ],
-  // A cada 5 minutos: publica no Instagram o que estiver na hora (fila/instagram.json).
-  "triggers": { "crons": ["*/5 * * * *"] },
+  // A cada 5 minutos: publica o que estiver na hora nas filas (fila/*.json). De hora em hora (min 7): radar de manchetes.
+  "triggers": { "crons": ["*/5 * * * *", "7 * * * *"] },
   // Não apagar variáveis criadas no painel do Cloudflare a cada deploy (IG_USER_ID, IG_ACCESS_TOKEN).
   "keep_vars": true,
   "observability": { "enabled": true }

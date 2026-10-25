@@ -1,10 +1,11 @@
 // Modo Máquina: Worker do site.
-// Serve as páginas estáticas (pasta out/), a API da newsletter e as filas do Instagram, do Threads e do X (cron).
+// Serve as páginas estáticas (pasta out/), a API da newsletter as filas do Instagram, do Threads e do X e o radar de manchetes (crons).
 // A lista de inscritos fica no banco D1 do próprio Cloudflare (binding DB).
 
 import { rodarFila, situacao } from './instagram.js';
 import { rodarFilaThreads, situacaoThreads } from './threads.js';
 import { rodarFilaX, situacaoX } from './x.js';
+import { rodarRadar, paginaRadar } from './radar.js';
 
 const ORIGENS = ['https://modomaquina.com.br', 'https://www.modomaquina.com.br', 'https://modomaquina.marlon-assinaturas.workers.dev'];
 const SEGURANCA = {
@@ -133,6 +134,13 @@ export default {
       if (url.pathname === '/api/ig/fila') return json(await situacao(env));
       if (url.pathname === '/api/threads/fila') return json(await situacaoThreads(env));
       if (url.pathname === '/api/x/fila') return json(await situacaoX(env));
+      if (url.pathname === '/api/radar') {
+        // Primeira vez (banco vazio): busca as manchetes na hora.
+        try { const c = await env.DB.prepare("SELECT COUNT(*) AS n FROM radar_itens").first(); if (!c.n) await rodarRadar(env); } catch { await rodarRadar(env); }
+        const r = await paginaRadar(url, env);
+        if (r.html) return new Response(r.html, { headers: { ...SEGURANCA, 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'" } });
+        return json(r.json);
+      }
       if (url.pathname.startsWith('/api/')) return json({ ok: false, erro: 'nao-encontrado' }, 404);
     } catch (e) {
       console.error('api', e && e.message);
@@ -141,6 +149,8 @@ export default {
     return env.ASSETS.fetch(req);
   },
   async scheduled(evento, env, ctx) {
+    // Cron de hora em hora (minuto 7): só o radar de manchetes. Os outros (a cada 5 min): as filas.
+    if (evento.cron === '7 * * * *') { ctx.waitUntil(rodarRadar(env).catch((e) => console.error('radar', e && e.message))); return; }
     ctx.waitUntil(Promise.all([
       rodarFila(env).catch((e) => console.error('instagram', e && e.message)),
       rodarFilaThreads(env).catch((e) => console.error('threads', e && e.message)),
