@@ -132,3 +132,21 @@ img,svg{display:block;max-width:100%}
 .news .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (max-width:760px){.news{grid-template-columns:1fr;padding:22px}.news-row{flex-direction:column}}
+
+/* Formulário de contato */
+.contato{display:grid;gap:14px;margin:26px 0;max-width:560px}
+.contato label{display:grid;gap:6px;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.04em}
+.contato input,.contato select,.contato textarea{font:inherit;font-weight:400;text-transform:none;letter-spacing:0;background:var(--bg2);color:#FAFAFA;border:1px solid var(--line);padding:12px 14px}
+.contato textarea{resize:vertical}
+.contato .btn{justify-self:start}
+.contato .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.contato .news-aceite{display:flex;text-transform:none;letter-spacing:0;font-weight:400}
+/* Vitrine (afiliados) */
+.vitrine{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}
+@media (max-width:900px){.vitrine{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){.vitrine{grid-template-columns:1fr}}
+.vitrine .item{border:1px solid var(--line);background:var(--bg2);padding:18px;display:flex;flex-direction:column;gap:8px}
+.vitrine .item b{font-weight:900;text-transform:uppercase;font-size:15px}
+.vitrine .item p{color:var(--muted);font-size:14px;margin:0;flex:1}
+.vitrine .item .loja{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.aviso-afiliado{border-left:3px solid var(--orange);background:var(--bg2);padding:12px 16px;font-size:14px;color:var(--muted)}

@@ -78,6 +78,36 @@ async function inscrever(req, env) {
   return json({ ok: true });
 }
 
+const SCHEMA_CONTATO = `CREATE TABLE IF NOT EXISTS contatos (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, email TEXT NOT NULL, assunto TEXT, mensagem TEXT NOT NULL, ip_hash TEXT, criado_em TEXT NOT NULL, respondido INTEGER NOT NULL DEFAULT 0)`;
+
+// Formulário da página /contato. Mensagens ficam no D1 (tabela contatos): ver no painel D1 → Console.
+async function contato(req, env) {
+  const origem = req.headers.get('Origin');
+  if (!origem || !ORIGENS.includes(origem)) return json({ ok: false, erro: 'origem' }, 403);
+  if (!(req.headers.get('Content-Type') || '').includes('application/json')) return json({ ok: false, erro: 'formato' }, 415);
+  if (Number(req.headers.get('Content-Length') || 0) > 8192) return json({ ok: false, erro: 'tamanho' }, 413);
+  let d;
+  try { d = await req.json(); } catch { return json({ ok: false, erro: 'formato' }, 400); }
+  if (d.site || Number(d.ms || 0) < 3000) return json({ ok: true }); // robô: finge que deu certo
+  const nome = String(d.nome || '').trim().slice(0, 80);
+  const email = String(d.email || '').trim().toLowerCase();
+  const assunto = String(d.assunto || '').trim().slice(0, 60);
+  const mensagem = String(d.mensagem || '').trim().slice(0, 3000);
+  if (!nome) return json({ ok: false, erro: 'nome' }, 400);
+  if (email.length > 254 || !EMAIL_OK.test(email)) return json({ ok: false, erro: 'email' }, 400);
+  if (mensagem.length < 10) return json({ ok: false, erro: 'mensagem' }, 400);
+  if (d.aceite !== true) return json({ ok: false, erro: 'aceite' }, 400);
+  if (!env.DB) return json({ ok: false, erro: 'indisponivel' }, 503);
+  await env.DB.exec(SCHEMA_CONTATO);
+  const ipHash = (await sha256((req.headers.get('CF-Connecting-IP') || '') + '|' + new Date().toISOString().slice(0, 10) + '|modomaquina')).slice(0, 32);
+  const recente = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM contatos WHERE ip_hash = ? AND criado_em > ?').bind(ipHash, recente).first();
+  if (n >= 3) return json({ ok: false, erro: 'limite' }, 429);
+  await env.DB.prepare('INSERT INTO contatos (nome, email, assunto, mensagem, ip_hash, criado_em) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(nome, email, assunto, mensagem, ipHash, new Date().toISOString()).run();
+  return json({ ok: true });
+}
+
 async function sair(url, env) {
   const token = (url.searchParams.get('t') || '').replace(/[^a-f0-9]/g, '');
   if (!env.DB || token.length !== 32) return pagina('Link inválido', 'Esse link de descadastro não é válido. Se quiser sair da lista, responda qualquer e-mail nosso pedindo.', 400);
@@ -96,6 +126,10 @@ export default {
         return json({ ok: false, erro: 'metodo' }, 405);
       }
       if (url.pathname === '/api/newsletter/sair') return await sair(url, env);
+      if (url.pathname === '/api/contato') {
+        if (req.method === 'POST') return await contato(req, env);
+        return json({ ok: false, erro: 'metodo' }, 405);
+      }
       if (url.pathname === '/api/ig/fila') return json(await situacao(env));
       if (url.pathname === '/api/threads/fila') return json(await situacaoThreads(env));
       if (url.pathname === '/api/x/fila') return json(await situacaoX(env));

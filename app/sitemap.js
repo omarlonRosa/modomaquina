@@ -9,6 +9,7 @@ export default function sitemap() {
     ...EDITORIAS.map((e) => ({ url: `${base}/editoria/${e.slug}`, priority: 0.6 })),
     { url: `${base}/sobre`, priority: 0.4 },
     { url: `${base}/anuncie`, priority: 0.4 },
+    { url: `${base}/contato`, priority: 0.4 },
     { url: `${base}/privacidade`, priority: 0.2 },
   ];
 }

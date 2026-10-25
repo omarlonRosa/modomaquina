@@ -43,6 +43,7 @@ export function Footer() {
             <ul>
               <li><Link href="/sobre">Sobre</Link></li>
               <li><Link href="/anuncie">Anuncie</Link></li>
+              <li><Link href="/contato">Contato</Link></li>
               <li><Link href="/privacidade">Privacidade</Link></li>
               <li><a href={SITE.instagram} target="_blank" rel="noopener">Instagram</a></li>
             </ul>

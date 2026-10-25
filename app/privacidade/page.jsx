@@ -11,12 +11,16 @@ export default function Privacidade() {
         <p><i>Última atualização: outubro de 2026.</i></p>
         <p>Esta política explica como o Modo Máquina trata informações de quem visita este site, em linha com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).</p>
         <h2>Que dados coletamos</h2>
-        <p>Hoje o site não possui cadastro nem formulários. Podemos coletar dados técnicos e anônimos de navegação (como páginas visitadas, tipo de dispositivo e origem do acesso) por meio de ferramentas de medição de audiência, para entender quais conteúdos interessam mais.</p>
+        <p>O site tem dois formulários: a newsletter e a página de contato (veja abaixo). Podemos coletar dados técnicos e anônimos de navegação (como páginas visitadas, tipo de dispositivo e origem do acesso) por meio de ferramentas de medição de audiência, para entender quais conteúdos interessam mais.</p>
         <h2>Cookies e publicidade</h2>
         <p>Este site pode exibir anúncios. Parceiros de publicidade, como o Google, podem usar cookies para exibir anúncios com base em visitas anteriores a este e a outros sites. Você pode desativar a publicidade personalizada nas <a className="o" href="https://adssettings.google.com" target="_blank" rel="noopener">configurações de anúncios do Google</a> e gerenciar cookies no seu navegador. Saiba como o Google usa esses dados em <a className="o" href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener">policies.google.com/technologies/ads</a>.</p>
         <h2>Newsletter</h2>
         <p>Se você se inscrever na newsletter, guardamos seu e-mail, a data e a página em que você se inscreveu e um código anônimo derivado do seu endereço de IP (usado só para bloquear cadastros em massa por robôs). Esses dados ficam num banco de dados do Modo Máquina, hospedado na Cloudflare, e são usados apenas para enviar a newsletter que você pediu. Não vendemos nem compartilhamos sua lista com terceiros. Para o envio dos e-mails, poderemos usar um serviço especializado de entrega, que só processa os dados para fazer essa entrega.</p>
         <p>Todo e-mail terá um link para sair da lista, e você pode pedir a exclusão completa dos seus dados quando quiser.</p>
+        <h2>Formulário de contato</h2>
+        <p>Se você nos escrever pela página de contato, guardamos seu nome, e-mail, assunto, mensagem, a data e um código anônimo derivado do seu endereço de internet (usado só pra evitar spam). Usamos esses dados apenas pra responder você e apagamos quando você pedir.</p>
+        <h2>Links de afiliado</h2>
+        <p>Algumas páginas, como a Vitrine, têm links de afiliado de lojas como Amazon, Mercado Livre e Shopee. Se você comprar por eles, ganhamos uma comissão, sem custo extra pra você. Ao clicar, você vai pro site da loja, que tem a própria política de privacidade e pode usar cookies pra registrar a indicação. Links de afiliado são sempre identificados.</p>
         <h2>Comunidade</h2>
         <p>Quando lançarmos a comunidade no WhatsApp, só vamos usar seu telefone com seu consentimento. Você poderá sair a qualquer momento.</p>
         <h2>Seus direitos</h2>
