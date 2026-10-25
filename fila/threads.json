@@ -38,5 +38,45 @@
     "texto": "O guia completo, com as causas mais comuns e os códigos do scanner: https://modomaquina.com.br/artigos/luz-da-injecao-acesa-o-que-fazer"
    }
   ]
+ },
+ {
+  "id": "2026-10-25-guia-scanner-obd2",
+  "publicar_em": "2026-10-25T20:05:00-03:00",
+  "posts": [
+   {
+    "texto": "Scanner OBD2: o aparelho que lê o código da luz da injeção. 🔧\n\nAtenção: no iPhone, só funciona adaptador Bluetooth LE (4.0) ou Wi-Fi. E desconfia do barato demais.\n\nVocê já usou? Qual app?",
+    "midias": [
+     "https://modomaquina.com.br/media/carrossel/scanner-obd2/1.jpg",
+     "https://modomaquina.com.br/media/carrossel/scanner-obd2/2.jpg",
+     "https://modomaquina.com.br/media/carrossel/scanner-obd2/3.jpg",
+     "https://modomaquina.com.br/media/carrossel/scanner-obd2/4.jpg",
+     "https://modomaquina.com.br/media/carrossel/scanner-obd2/5.jpg",
+     "https://modomaquina.com.br/media/carrossel/scanner-obd2/6.jpg"
+    ]
+   },
+   {
+    "texto": "Guia completo, com tipos, compatibilidade e como ler o código: https://modomaquina.com.br/artigos/scanner-obd2-como-usar-qual-comprar"
+   }
+  ]
+ },
+ {
+  "id": "2026-10-27-guia-calibragem",
+  "publicar_em": "2026-10-27T12:05:00-03:00",
+  "posts": [
+   {
+    "texto": "Calibragem de pneu: o jeito certo. 🛞\n\nPressão da etiqueta do carro (não da lateral do pneu), pneu frio e conferida pelo menos a cada 15 dias. E o estepe também!\n\nQuando foi a última vez que você calibrou o seu?",
+    "midias": [
+     "https://modomaquina.com.br/media/carrossel/calibragem/1.jpg",
+     "https://modomaquina.com.br/media/carrossel/calibragem/2.jpg",
+     "https://modomaquina.com.br/media/carrossel/calibragem/3.jpg",
+     "https://modomaquina.com.br/media/carrossel/calibragem/4.jpg",
+     "https://modomaquina.com.br/media/carrossel/calibragem/5.jpg",
+     "https://modomaquina.com.br/media/carrossel/calibragem/6.jpg"
+    ]
+   },
+   {
+    "texto": "Guia completo, com o passo a passo e a conta de psi pra bar: https://modomaquina.com.br/artigos/calibragem-de-pneu-como-fazer-certo"
+   }
+  ]
  }
 ]
