@@ -81,13 +81,34 @@ export async function rodarFilaX(env) {
   }
 }
 
-// Situação da fila (sem dados sensíveis): GET /api/x/fila. Não chama a API do X (cada chamada custa).
-export async function situacaoX(env) {
+// Formato das chaves, sem mostrar valor: Consumer Key ~25 caracteres, Consumer Secret ~50,
+// Access Token "números-letras" ~50, Access Secret ~45. Client ID/Secret do OAuth 2.0 têm outro formato.
+function formatoChaves(env) {
+  const f = (v) => (v ? { tamanho: v.length, espaco_sobrando: v !== v.trim() || /\s/.test(v) } : 'faltando');
+  return {
+    X_API_KEY: f(env.X_API_KEY), X_API_SECRET: f(env.X_API_SECRET),
+    X_ACCESS_TOKEN: { ...f(env.X_ACCESS_TOKEN), ...(env.X_ACCESS_TOKEN ? { formato_numero_traco: /^\d+-\w+$/.test(env.X_ACCESS_TOKEN.trim()) } : {}) },
+    X_ACCESS_SECRET: f(env.X_ACCESS_SECRET),
+  };
+}
+
+// Teste de credencial só de leitura (GET /2/users/me). Só roda com ?teste=1, porque cada chamada custa.
+async function testarCredencial(env) {
+  const url = 'https://api.x.com/2/users/me';
+  const res = await fetch(url, { headers: { Authorization: await autorizacao(env, 'GET', url) } });
+  const d = await res.json().catch(() => ({}));
+  return res.ok && d.data ? { ok: true, usuario: d.data.username } : { ok: false, http: res.status, erro: d.detail || d.title || (d.errors && d.errors[0] && d.errors[0].message) || null };
+}
+
+// Situação da fila (sem dados sensíveis): GET /api/x/fila. Só chama a API do X com ?teste=1.
+export async function situacaoX(env, teste = false) {
   let regs = [];
   if (env.DB) { await env.DB.exec(SCHEMA); regs = (await env.DB.prepare('SELECT id, status, tentativas, erro FROM x_publicados').all()).results || []; }
   const mapa = Object.fromEntries(regs.map((r) => [r.id, r]));
   return {
     configurado: configuradoX(env),
+    chaves: formatoChaves(env),
+    ...(teste && configuradoX(env) ? { teste: await testarCredencial(env) } : {}),
     fila: FILA.map((p) => ({ id: p.id, posts: p.posts.length, publicar_em: p.publicar_em, ...(mapa[p.id] ? { status: mapa[p.id].status, tentativas: mapa[p.id].tentativas, erro: mapa[p.id].erro } : { status: 'aguardando' }) })),
   };
 }
