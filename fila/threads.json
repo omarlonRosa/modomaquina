@@ -1,82 +1,102 @@
 [
- {
-  "id": "2026-10-25-gp-eua-agenda-v2",
-  "publicar_em": "2026-10-25T03:48:00-03:00",
-  "posts": [
-   {
-    "texto": "É hoje! A F1 corre em Austin às 17h (de Brasília), e o título pode sair lá. 🏁\n\nOnde assistir: SporTV 3, Globoplay e F1 TV.\n\nQuem você acha que vence?",
-    "midias": [
-     "https://modomaquina.com.br/media/carrossel/gp-eua-2026/1.jpg",
-     "https://modomaquina.com.br/media/carrossel/gp-eua-2026/2.jpg",
-     "https://modomaquina.com.br/media/carrossel/gp-eua-2026/3.jpg",
-     "https://modomaquina.com.br/media/carrossel/gp-eua-2026/4.jpg",
-     "https://modomaquina.com.br/media/carrossel/gp-eua-2026/5.jpg",
-     "https://modomaquina.com.br/media/carrossel/gp-eua-2026/6.jpg"
+  {
+    "id": "2026-10-25-gp-eua-agenda-v2",
+    "publicar_em": "2026-10-25T03:48:00-03:00",
+    "posts": [
+      {
+        "texto": "É hoje! A F1 corre em Austin às 17h (de Brasília), e o título pode sair lá. 🏁\n\nOnde assistir: SporTV 3, Globoplay e F1 TV.\n\nQuem você acha que vence?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/gp-eua-2026/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-eua-2026/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-eua-2026/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-eua-2026/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-eua-2026/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-eua-2026/6.jpg"
+        ]
+      },
+      {
+        "texto": "Matéria completa, com horários e o que está em jogo no campeonato: https://modomaquina.com.br/artigos/gp-dos-eua-f1-2026-horarios-onde-assistir"
+      }
     ]
-   },
-   {
-    "texto": "Matéria completa, com horários e o que está em jogo no campeonato: https://modomaquina.com.br/artigos/gp-dos-eua-f1-2026-horarios-onde-assistir"
-   }
-  ]
- },
- {
-  "id": "2026-10-26-guia-luz-injecao",
-  "publicar_em": "2026-10-26T12:05:00-03:00",
-  "posts": [
-   {
-    "texto": "Luz da injeção acesa? Fixa ou piscando, cada uma pede uma atitude. 🚨\n\nFixa: dá pra ir com calma até a oficina. Piscando: pare assim que for seguro, porque o catalisador corre risco.\n\nJá acendeu no seu carro? O que era?",
-    "midias": [
-     "https://modomaquina.com.br/media/carrossel/luz-injecao/1.jpg",
-     "https://modomaquina.com.br/media/carrossel/luz-injecao/2.jpg",
-     "https://modomaquina.com.br/media/carrossel/luz-injecao/3.jpg",
-     "https://modomaquina.com.br/media/carrossel/luz-injecao/4.jpg",
-     "https://modomaquina.com.br/media/carrossel/luz-injecao/5.jpg",
-     "https://modomaquina.com.br/media/carrossel/luz-injecao/6.jpg"
+  },
+  {
+    "id": "2026-10-26-guia-luz-injecao",
+    "publicar_em": "2026-10-26T12:05:00-03:00",
+    "posts": [
+      {
+        "texto": "Luz da injeção acesa? Fixa ou piscando, cada uma pede uma atitude. 🚨\n\nFixa: dá pra ir com calma até a oficina. Piscando: pare assim que for seguro, porque o catalisador corre risco.\n\nJá acendeu no seu carro? O que era?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/luz-injecao/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/luz-injecao/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/luz-injecao/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/luz-injecao/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/luz-injecao/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/luz-injecao/6.jpg"
+        ]
+      },
+      {
+        "texto": "O guia completo, com as causas mais comuns e os códigos do scanner: https://modomaquina.com.br/artigos/luz-da-injecao-acesa-o-que-fazer"
+      }
     ]
-   },
-   {
-    "texto": "O guia completo, com as causas mais comuns e os códigos do scanner: https://modomaquina.com.br/artigos/luz-da-injecao-acesa-o-que-fazer"
-   }
-  ]
- },
- {
-  "id": "2026-10-25-guia-scanner-obd2",
-  "publicar_em": "2026-10-25T20:05:00-03:00",
-  "posts": [
-   {
-    "texto": "Scanner OBD2: o aparelho que lê o código da luz da injeção. 🔧\n\nAtenção: no iPhone, só funciona adaptador Bluetooth LE (4.0) ou Wi-Fi. E desconfia do barato demais.\n\nVocê já usou? Qual app?",
-    "midias": [
-     "https://modomaquina.com.br/media/carrossel/scanner-obd2/1.jpg",
-     "https://modomaquina.com.br/media/carrossel/scanner-obd2/2.jpg",
-     "https://modomaquina.com.br/media/carrossel/scanner-obd2/3.jpg",
-     "https://modomaquina.com.br/media/carrossel/scanner-obd2/4.jpg",
-     "https://modomaquina.com.br/media/carrossel/scanner-obd2/5.jpg",
-     "https://modomaquina.com.br/media/carrossel/scanner-obd2/6.jpg"
+  },
+  {
+    "id": "2026-10-25-guia-scanner-obd2",
+    "publicar_em": "2026-10-25T20:05:00-03:00",
+    "posts": [
+      {
+        "texto": "Scanner OBD2: o aparelho que lê o código da luz da injeção. 🔧\n\nAtenção: no iPhone, só funciona adaptador Bluetooth LE (4.0) ou Wi-Fi. E desconfia do barato demais.\n\nVocê já usou? Qual app?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/scanner-obd2/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/scanner-obd2/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/scanner-obd2/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/scanner-obd2/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/scanner-obd2/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/scanner-obd2/6.jpg"
+        ]
+      },
+      {
+        "texto": "Guia completo, com tipos, compatibilidade e como ler o código: https://modomaquina.com.br/artigos/scanner-obd2-como-usar-qual-comprar"
+      }
     ]
-   },
-   {
-    "texto": "Guia completo, com tipos, compatibilidade e como ler o código: https://modomaquina.com.br/artigos/scanner-obd2-como-usar-qual-comprar"
-   }
-  ]
- },
- {
-  "id": "2026-10-27-guia-calibragem",
-  "publicar_em": "2026-10-27T12:05:00-03:00",
-  "posts": [
-   {
-    "texto": "Calibragem de pneu: o jeito certo. 🛞\n\nPressão da etiqueta do carro (não da lateral do pneu), pneu frio e conferida pelo menos a cada 15 dias. E o estepe também!\n\nQuando foi a última vez que você calibrou o seu?",
-    "midias": [
-     "https://modomaquina.com.br/media/carrossel/calibragem/1.jpg",
-     "https://modomaquina.com.br/media/carrossel/calibragem/2.jpg",
-     "https://modomaquina.com.br/media/carrossel/calibragem/3.jpg",
-     "https://modomaquina.com.br/media/carrossel/calibragem/4.jpg",
-     "https://modomaquina.com.br/media/carrossel/calibragem/5.jpg",
-     "https://modomaquina.com.br/media/carrossel/calibragem/6.jpg"
+  },
+  {
+    "id": "2026-10-27-guia-calibragem",
+    "publicar_em": "2026-10-27T12:05:00-03:00",
+    "posts": [
+      {
+        "texto": "Calibragem de pneu: o jeito certo. 🛞\n\nPressão da etiqueta do carro (não da lateral do pneu), pneu frio e conferida pelo menos a cada 15 dias. E o estepe também!\n\nQuando foi a última vez que você calibrou o seu?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/calibragem/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/calibragem/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/calibragem/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/calibragem/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/calibragem/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/calibragem/6.jpg"
+        ]
+      },
+      {
+        "texto": "Guia completo, com o passo a passo e a conta de psi pra bar: https://modomaquina.com.br/artigos/calibragem-de-pneu-como-fazer-certo"
+      }
     ]
-   },
-   {
-    "texto": "Guia completo, com o passo a passo e a conta de psi pra bar: https://modomaquina.com.br/artigos/calibragem-de-pneu-como-fazer-certo"
-   }
-  ]
- }
+  },
+  {
+    "id": "2026-10-25-porsche-recall",
+    "publicar_em": "2026-10-25T14:05:00-03:00",
+    "posts": [
+      {
+        "texto": "A Porsche pediu pros donos de 548 esportivos ano 2024 pararem de dirigir. 🛑\n\nNos EUA, a peça que prende a roda de porca central de 911 GT3, Turbo, S/T e 718 RS pode quebrar, e a roda pode se soltar. No Brasil, nenhuma convocação anunciada até agora.\n\nVocê confiaria a roda a uma porca só?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/porsche-recall/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/porsche-recall/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/porsche-recall/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/porsche-recall/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/porsche-recall/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/porsche-recall/6.jpg"
+        ]
+      },
+      {
+        "texto": "Quais modelos, o que a Porsche vai fazer e o que vale pro Brasil: https://modomaquina.com.br/artigos/porsche-recall-911-718-roda-pode-soltar"
+      }
+    ]
+  }
 ]
