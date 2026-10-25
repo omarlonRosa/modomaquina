@@ -133,7 +133,7 @@ export default {
       }
       if (url.pathname === '/api/ig/fila') return json(await situacao(env));
       if (url.pathname === '/api/threads/fila') return json(await situacaoThreads(env));
-      if (url.pathname === '/api/x/fila') return json(await situacaoX(env, url.searchParams.get('teste') === '1'));
+      if (url.pathname === '/api/x/fila') return json(await situacaoX(env));
       if (url.pathname === '/api/radar') {
         // Primeira vez (banco vazio): busca as manchetes na hora.
         try { const c = await env.DB.prepare("SELECT COUNT(*) AS n FROM radar_itens").first(); if (!c.n) await rodarRadar(env); } catch { await rodarRadar(env); }
