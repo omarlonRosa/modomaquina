@@ -1,6 +1,6 @@
 {
   // Modo Máquina: site estático (Next.js com output: 'export') + um Worker pequeno
-  // que só responde em /api/* (newsletter). Todo o resto é servido direto da pasta out/.
+  // que só responde em /api/* (newsletter e situação da fila do Instagram) e roda o cron do Instagram. Todo o resto é servido direto da pasta out/.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "modomaquina",
   "main": "worker/index.js",
@@ -19,5 +19,7 @@
       "database_id": "b4bd1351-7a92-4215-8897-d232a27598d9"
     }
   ],
+  // A cada 5 minutos: publica no Instagram o que estiver na hora (fila/instagram.json).
+  "triggers": { "crons": ["*/5 * * * *"] },
   "observability": { "enabled": true }
 }

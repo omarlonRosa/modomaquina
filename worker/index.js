@@ -1,6 +1,8 @@
 // Modo Máquina: Worker do site.
-// Serve as páginas estáticas (pasta out/) e cuida só da API da newsletter.
+// Serve as páginas estáticas (pasta out/), a API da newsletter e a fila do Instagram (cron).
 // A lista de inscritos fica no banco D1 do próprio Cloudflare (binding DB).
+
+import { rodarFila, situacao } from './instagram.js';
 
 const ORIGENS = ['https://modomaquina.com.br', 'https://www.modomaquina.com.br', 'https://modomaquina.marlon-assinaturas.workers.dev'];
 const SEGURANCA = {
@@ -92,11 +94,15 @@ export default {
         return json({ ok: false, erro: 'metodo' }, 405);
       }
       if (url.pathname === '/api/newsletter/sair') return await sair(url, env);
+      if (url.pathname === '/api/ig/fila') return json(await situacao(env));
       if (url.pathname.startsWith('/api/')) return json({ ok: false, erro: 'nao-encontrado' }, 404);
     } catch (e) {
-      console.error('newsletter', e && e.message);
+      console.error('api', e && e.message);
       return json({ ok: false, erro: 'interno' }, 500);
     }
     return env.ASSETS.fetch(req);
+  },
+  async scheduled(evento, env, ctx) {
+    ctx.waitUntil(rodarFila(env).catch((e) => console.error('instagram', e && e.message)));
   },
 };
