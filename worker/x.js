@@ -8,6 +8,8 @@ import FILA from '../fila/x.json';
 const URL_POST = 'https://api.x.com/2/tweets';
 const ATRASO_MAX_H = 6;
 const TENTATIVAS_MAX = 3;
+// Pausada em 25/10/2026: chaves ok, mas a conta está sem créditos ("credits depleted"). Voltar pra false quando o Marlon comprar créditos.
+const PAUSADO = true;
 const SCHEMA = `CREATE TABLE IF NOT EXISTS x_publicados (id TEXT PRIMARY KEY, status TEXT NOT NULL, tentativas INTEGER NOT NULL DEFAULT 0, post_id TEXT, erro TEXT, atualizado_em TEXT NOT NULL)`;
 
 const pct = (s) => encodeURIComponent(s).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
@@ -56,7 +58,7 @@ async function marcar(env, id, status, tentativas, postId, erro) {
 const configuradoX = (env) => Boolean(env.X_API_KEY && env.X_API_SECRET && env.X_ACCESS_TOKEN && env.X_ACCESS_SECRET);
 
 export async function rodarFilaX(env) {
-  if (!env.DB || !configuradoX(env)) return;
+  if (PAUSADO || !env.DB || !configuradoX(env)) return;
   await env.DB.exec(SCHEMA);
   const agora = Date.now();
   for (const item of FILA.filter((p) => Date.parse(p.publicar_em) <= agora)) {
@@ -99,6 +101,7 @@ export async function situacaoX(env) {
   const mapa = Object.fromEntries(regs.map((r) => [r.id, r]));
   return {
     configurado: configuradoX(env),
+    pausado: PAUSADO,
     chaves: formatoChaves(env),
     fila: FILA.map((p) => ({ id: p.id, posts: p.posts.length, publicar_em: p.publicar_em, ...(mapa[p.id] ? { status: mapa[p.id].status, tentativas: mapa[p.id].tentativas, erro: mapa[p.id].erro } : { status: 'aguardando' }) })),
   };
