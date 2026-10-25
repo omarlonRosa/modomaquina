@@ -1,1 +1,25 @@
-[]
+[
+ {
+  "id": "2026-10-25-gp-eua-agenda",
+  "tipo": "CARROSSEL",
+  "publicar_em": "2026-10-25T10:00:00-03:00",
+  "legenda": "É hoje! A F1 corre em Austin às 17h (de Brasília), e o título pode sair lá. 🏁\n\nOnde assistir: SporTV 3, Globoplay e F1 TV. Arrasta pro lado pra ver tudo 👉\n\nQuem você acha que vence em Austin? Comenta aí 👇\n\n📸 Fotos: Scuderia Ferrari · Fontes: Lance!, Itatiaia, Sky Sports · Matéria completa no site (link na bio) · 📩 Assine o Modo Máquina Semanal no site\n\n#modomaquina #f1 #formula1 #gpdoseua #austin",
+  "midias": [
+   "https://modomaquina.com.br/media/carrossel/gp-eua-2026/1.jpg",
+   "https://modomaquina.com.br/media/carrossel/gp-eua-2026/2.jpg",
+   "https://modomaquina.com.br/media/carrossel/gp-eua-2026/3.jpg",
+   "https://modomaquina.com.br/media/carrossel/gp-eua-2026/4.jpg",
+   "https://modomaquina.com.br/media/carrossel/gp-eua-2026/5.jpg",
+   "https://modomaquina.com.br/media/carrossel/gp-eua-2026/6.jpg"
+  ]
+ },
+ {
+  "id": "2026-10-25-gp-eua-story",
+  "tipo": "STORY",
+  "publicar_em": "2026-10-25T10:15:00-03:00",
+  "legenda": "",
+  "midias": [
+   "https://modomaquina.com.br/media/stories/gp-eua-2026.jpg"
+  ]
+ }
+]
