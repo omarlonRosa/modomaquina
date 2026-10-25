@@ -2,7 +2,7 @@
 // fila em fila/threads.json, cron a cada 5 min, registro no D1 (th_publicados) e renovação do token.
 // Cada item: { id, publicar_em, posts: [ { texto, midias? }, ... ] }. O 1º post pode ter 1 imagem
 // ou um carrossel (2 a 20); os seguintes saem como respostas encadeadas (uma thread, como no X).
-// Segredos no Cloudflare: THREADS_USER_ID e THREADS_ACCESS_TOKEN.
+// Segredo no Cloudflare: THREADS_ACCESS_TOKEN (o ID da conta vem do próprio token, via 'me').
 import FILA from '../fila/threads.json';
 
 const API = 'https://graph.threads.net/v1.0';
@@ -54,7 +54,7 @@ async function pronto(id, tk) {
 
 // Cria e publica um post; devolve o id publicado.
 async function postar(post, env, tk, respostaA) {
-  const uid = env.THREADS_USER_ID;
+  const uid = 'me'; // a própria conta do token (dispensa o ID numérico)
   const base = { access_token: tk, ...(respostaA ? { reply_to_id: respostaA } : {}) };
   const midias = post.midias || [];
   let c;
@@ -84,7 +84,7 @@ async function marcar(env, id, status, tentativas, mediaId, erro) {
 }
 
 export async function rodarFilaThreads(env) {
-  if (!env.DB || !env.THREADS_USER_ID || !env.THREADS_ACCESS_TOKEN) return;
+  if (!env.DB || !env.THREADS_ACCESS_TOKEN) return;
   for (const s of SCHEMA) await env.DB.exec(s);
   const agora = Date.now();
   const vencidos = FILA.filter((p) => Date.parse(p.publicar_em) <= agora);
@@ -116,7 +116,7 @@ export async function rodarFilaThreads(env) {
 
 // Situação da fila (sem dados sensíveis): GET /api/threads/fila
 export async function situacaoThreads(env) {
-  const configurado = Boolean(env.THREADS_USER_ID && env.THREADS_ACCESS_TOKEN);
+  const configurado = Boolean(env.THREADS_ACCESS_TOKEN);
   let regs = [];
   let conta = null;
   if (env.DB) {
