@@ -138,5 +138,25 @@
         "texto": "Pódio, o lance da parada única e a corrida do Bortoleto: https://modomaquina.com.br/artigos/gp-dos-eua-f1-2026-resultado-antonelli-vence"
       }
     ]
+  },
+  {
+    "id": "2026-10-28-guia-bateria",
+    "publicar_em": "2026-10-28T12:05:00-03:00",
+    "posts": [
+      {
+        "texto": "Bateria arriou? Chupeta do jeito certo. 🔋\n\nVermelho primeiro, nas duas baterias. O último cabo preto vai num metal sem pintura do motor do carro parado, e não na bateria: ela pode soltar hidrogênio, e faísca perto dela é perigo.\n\nJá ficou na mão com bateria arriada?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/bateria/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/bateria/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/bateria/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/bateria/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/bateria/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/bateria/6.jpg"
+        ]
+      },
+      {
+        "texto": "O passo a passo completo, o auxiliar de partida e o que fazer depois que o carro pega: https://modomaquina.com.br/artigos/bateria-arriada-chupeta-auxiliar-de-partida"
+      }
+    ]
   }
 ]
