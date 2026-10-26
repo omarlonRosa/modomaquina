@@ -158,5 +158,25 @@
         "texto": "O passo a passo completo, o auxiliar de partida e o que fazer depois que o carro pega: https://modomaquina.com.br/artigos/bateria-arriada-chupeta-auxiliar-de-partida"
       }
     ]
+  },
+  {
+    "id": "2026-10-29-guia-troca-oleo",
+    "publicar_em": "2026-10-29T12:05:00-03:00",
+    "posts": [
+      {
+        "texto": "Troca de óleo: o prazo real. 🛢️\n\nVale o manual, por km ou por tempo, o que vier primeiro. E se você roda em trânsito para e anda ou faz trajetos curtos, isso é uso severo: o intervalo cai pela metade.\n\nDe quanto em quanto tempo você troca o óleo?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/troca-oleo/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/troca-oleo/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/troca-oleo/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/troca-oleo/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/troca-oleo/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/troca-oleo/6.jpg"
+        ]
+      },
+      {
+        "texto": "O uso severo, o filtro, o óleo certo e como conferir a vareta: https://modomaquina.com.br/artigos/troca-de-oleo-de-quanto-em-quanto-tempo"
+      }
+    ]
   }
 ]
