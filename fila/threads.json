@@ -178,5 +178,25 @@
         "texto": "O uso severo, o filtro, o óleo certo e como conferir a vareta: https://modomaquina.com.br/artigos/troca-de-oleo-de-quanto-em-quanto-tempo"
       }
     ]
+  },
+  {
+    "id": "2026-10-30-guia-torquimetro",
+    "publicar_em": "2026-10-30T12:05:00-03:00",
+    "posts": [
+      {
+        "texto": "Aperto da roda: nem no braço. 🔧\n\nFrouxo, a roda pode soltar. Apertado demais, estraga rosca e pode deformar o disco de freio. O torque certo está no manual: em estrela, em duas etapas, e confere de novo depois de 50 km.\n\nVocê aperta no braço ou com torquímetro?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/torquimetro/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/torquimetro/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/torquimetro/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/torquimetro/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/torquimetro/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/torquimetro/6.jpg"
+        ]
+      },
+      {
+        "texto": "O passo a passo e como usar o torquímetro de estalo sem errar: https://modomaquina.com.br/artigos/torquimetro-aperto-da-roda-como-usar"
+      }
+    ]
   }
 ]
