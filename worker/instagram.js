@@ -2,6 +2,7 @@
 // A fila fica em fila/instagram.json (vai junto no deploy). A cada 5 minutos o cron do Worker
 // publica o que já passou da hora e anota no D1 (tabela ig_publicados) pra não repetir.
 // Segredos no Cloudflare: IG_USER_ID e IG_ACCESS_TOKEN (token de 60 dias; o Worker renova sozinho).
+// REELS: o vídeo leva minutos pra processar, então o container fica "processando" no D1 e é publicado num ciclo seguinte do cron.
 import FILA from '../fila/instagram.json';
 
 const API = 'https://graph.instagram.com';
@@ -67,6 +68,10 @@ async function publicar(post, env, tk) {
       filhos.push(c.id);
     }
     criacao = await chamar(`${ig}/media`, { media_type: 'CAROUSEL', children: filhos.join(','), caption: post.legenda || '', access_token: tk });
+  } else if (post.tipo === 'REELS') {
+    // Não espera o processamento aqui: devolve o container pra ser publicado num ciclo seguinte do cron.
+    const c = await chamar(`${ig}/media`, { media_type: 'REELS', video_url: post.midias[0], ...(post.capa ? { cover_url: post.capa } : {}), caption: post.legenda || '', share_to_feed: 'true', access_token: tk });
+    return { processando: c.id };
   } else if (post.tipo === 'STORY') {
     criacao = await chamar(`${ig}/media`, { media_type: 'STORIES', image_url: post.midias[0], access_token: tk });
   } else {
@@ -84,6 +89,24 @@ async function marcar(env, id, status, tentativas, mediaId, erro) {
   ).bind(id, status, tentativas, mediaId, erro, new Date().toISOString()).run();
 }
 
+// Reel enviado num ciclo anterior: publica quando o Instagram terminar de processar o vídeo.
+async function conferirReel(env, post, reg, tk) {
+  try {
+    const d = await chamar(reg.media_id, { fields: 'status_code', access_token: tk }, 'GET');
+    if (d.status_code === 'FINISHED') {
+      const pub = await chamar(`${env.IG_USER_ID}/media_publish`, { creation_id: reg.media_id, access_token: tk });
+      await marcar(env, post.id, 'publicado', reg.tentativas, pub.id, null);
+      console.log('instagram: reel publicado', post.id, pub.id);
+    } else if (d.status_code === 'ERROR' || d.status_code === 'EXPIRED') {
+      await marcar(env, post.id, reg.tentativas >= TENTATIVAS_MAX ? 'erro' : 'pendente', reg.tentativas, null, `vídeo ${d.status_code}`);
+    } else if (Date.now() - Date.parse(post.publicar_em) > ATRASO_MAX_H * 3600 * 1000) {
+      await marcar(env, post.id, 'erro', reg.tentativas, null, 'vídeo não terminou de processar');
+    }
+  } catch (e) {
+    await marcar(env, post.id, reg.tentativas >= TENTATIVAS_MAX ? 'erro' : 'pendente', reg.tentativas, null, String(e.message).slice(0, 300));
+  }
+}
+
 export async function rodarFila(env) {
   if (!env.DB || !env.IG_USER_ID || !env.IG_ACCESS_TOKEN) return; // ainda não configurado
   for (const s of SCHEMA) await env.DB.exec(s);
@@ -92,12 +115,14 @@ export async function rodarFila(env) {
   if (!vencidos.length) return;
   const tk = await token(env);
   for (const post of vencidos) {
-    const reg = await env.DB.prepare('SELECT status, tentativas FROM ig_publicados WHERE id = ?').bind(post.id).first();
+    const reg = await env.DB.prepare('SELECT status, tentativas, media_id FROM ig_publicados WHERE id = ?').bind(post.id).first();
+    if (reg && reg.status === 'processando') { await conferirReel(env, post, reg, tk); continue; }
     if (reg && (reg.status === 'publicado' || reg.status === 'expirado' || reg.tentativas >= TENTATIVAS_MAX)) continue;
     if (agora - Date.parse(post.publicar_em) > ATRASO_MAX_H * 3600 * 1000) { await marcar(env, post.id, 'expirado', reg ? reg.tentativas : 0, null, 'passou da hora'); continue; }
     const tentativas = (reg ? reg.tentativas : 0) + 1;
     try {
       const mediaId = await publicar(post, env, tk);
+      if (mediaId && mediaId.processando) { await marcar(env, post.id, 'processando', tentativas, mediaId.processando, null); continue; }
       await marcar(env, post.id, 'publicado', tentativas, mediaId, null);
       console.log('instagram: publicado', post.id, mediaId);
     } catch (e) {
