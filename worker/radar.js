@@ -30,7 +30,7 @@ export const FONTES = [
   ['Motor1: Aston Martin', 'superesportivos', 'https://www.motor1.com/rss/make/aston-martin/'],
   ['Motor1: McLaren', 'superesportivos', 'https://www.motor1.com/rss/make/mclaren/'],
   ['Supercar Blondie', 'superesportivos', 'https://www.supercarblondie.com/feed/'],
-  ['Google Notícias: superesportivos', 'superesportivos', 'https://news.google.com/rss/search?q=Porsche%20OR%20Ferrari%20OR%20Lamborghini%20OR%20Bugatti%20OR%20%22Aston%20Martin%22%20OR%20McLaren%20when%3A2d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419'],
+  ['Google Notícias: superesportivos', 'superesportivos', 'https://news.google.com/rss/search?q=Porsche%20OR%20Ferrari%20OR%20Lamborghini%20OR%20Bugatti%20OR%20%22Aston%20Martin%22%20OR%20McLaren%20-eleitoral%20-zona%20-escola%20-vota%C3%A7%C3%A3o%20when%3A2d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419'],
   // Elétricos e China
   ['Electrek', 'eletricos', 'https://electrek.co/feed/'],
   ['InsideEVs', 'eletricos', 'https://insideevs.com/rss/news/all/'],
