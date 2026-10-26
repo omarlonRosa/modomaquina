@@ -1,6 +1,7 @@
 import './globals.css';
 import { Header, Footer } from '@/components/ui';
 import { SITE } from '@/lib/content';
+import Contador from '@/components/Contador';
 
 export const metadata = {
   metadataBase: new URL(SITE.url),
@@ -36,6 +37,7 @@ export default function RootLayout({ children }) {
         <Header />
         <main>{children}</main>
         <Footer />
+        <Contador />
       </body>
     </html>
   );

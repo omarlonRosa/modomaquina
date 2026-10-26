@@ -1,11 +1,12 @@
 // Modo Máquina: Worker do site.
-// Serve as páginas estáticas (pasta out/), a API da newsletter as filas do Instagram, do Threads e do X e o radar de manchetes (crons).
+// Serve as páginas estáticas (pasta out/), a API da newsletter, o contador de visitas (sem cookie), as filas do Instagram, do Threads e do X e o radar de manchetes (crons).
 // A lista de inscritos fica no banco D1 do próprio Cloudflare (binding DB).
 
 import { rodarFila, situacao } from './instagram.js';
 import { rodarFilaThreads, situacaoThreads } from './threads.js';
 import { rodarFilaX, situacaoX } from './x.js';
 import { rodarRadar, paginaRadar } from './radar.js';
+import { registrarVisita, paginaMetricas } from './metricas.js';
 
 const ORIGENS = ['https://modomaquina.com.br', 'https://www.modomaquina.com.br', 'https://modomaquina.marlon-assinaturas.workers.dev'];
 const SEGURANCA = {
@@ -130,6 +131,15 @@ export default {
       if (url.pathname === '/api/contato') {
         if (req.method === 'POST') return await contato(req, env);
         return json({ ok: false, erro: 'metodo' }, 405);
+      }
+      if (url.pathname === '/api/v') {
+        if (req.method === 'POST') return await registrarVisita(req, env, ORIGENS);
+        return json({ ok: false, erro: 'metodo' }, 405);
+      }
+      if (url.pathname === '/api/metricas') {
+        const r = await paginaMetricas(url, env);
+        if (r.html) return new Response(r.html, { headers: { ...SEGURANCA, 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'" } });
+        return json(r.json);
       }
       if (url.pathname === '/api/ig/fila') return json(await situacao(env));
       if (url.pathname === '/api/threads/fila') return json(await situacaoThreads(env));
