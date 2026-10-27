@@ -119,9 +119,35 @@ async function sair(url, env) {
   return pagina('Pronto, você saiu', 'Você não vai mais receber a newsletter do Modo Máquina. Se mudar de ideia, é só se inscrever de novo no site.');
 }
 
+// Vídeos grandes no R2 (bucket modomaquina-midia): GET/HEAD /m/<chave>, com suporte a Range (Instagram e TikTok baixam em partes).
+async function midia(req, env, url) {
+  if (!env.MIDIA || !['GET', 'HEAD'].includes(req.method)) return new Response('não encontrado', { status: 404 });
+  const chave = decodeURIComponent(url.pathname.slice(3));
+  if (!/^[\w\-/.]+$/.test(chave) || chave.includes('..')) return new Response('não encontrado', { status: 404 });
+  const obj = req.method === 'HEAD' ? await env.MIDIA.head(chave) : await env.MIDIA.get(chave, { range: req.headers, onlyIf: req.headers });
+  if (!obj) return new Response('não encontrado', { status: 404 });
+  const h = new Headers();
+  obj.writeHttpMetadata(h);
+  h.set('etag', obj.httpEtag);
+  h.set('Accept-Ranges', 'bytes');
+  h.set('Cache-Control', 'public, max-age=86400');
+  h.set('X-Content-Type-Options', 'nosniff');
+  if (req.method === 'HEAD' || !('body' in obj)) { h.set('Content-Length', String(obj.size)); return new Response(null, { status: req.method === 'HEAD' ? 200 : 304, headers: h }); }
+  if (obj.range && req.headers.get('Range')) {
+    const ini = obj.range.offset ?? (obj.size - obj.range.suffix);
+    const tam = obj.range.length ?? (obj.size - ini);
+    h.set('Content-Range', `bytes ${ini}-${ini + tam - 1}/${obj.size}`);
+    h.set('Content-Length', String(tam));
+    return new Response(obj.body, { status: 206, headers: h });
+  }
+  h.set('Content-Length', String(obj.size));
+  return new Response(obj.body, { headers: h });
+}
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
+    if (url.pathname.startsWith('/m/')) return midia(req, env, url);
     try {
       if (url.pathname === '/api/newsletter') {
         if (req.method === 'POST') return await inscrever(req, env);
