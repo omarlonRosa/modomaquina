@@ -24,7 +24,23 @@ async function chamar(caminho, params, metodo = 'POST') {
   return dados;
 }
 
+async function guardar(env, chave, valor) {
+  await env.DB.prepare("INSERT INTO th_config (chave, valor, atualizado_em) VALUES (?, ?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor, atualizado_em = excluded.atualizado_em")
+    .bind(chave, valor, new Date().toISOString()).run();
+}
+
+// Token recusado pela Meta (senha trocada, sessão invalidada, expirado): não é culpa do post, então não gasta tentativa.
+export const tokenRecusado = (msg) => /access token|session has been invalidated|OAuthException/i.test(String(msg));
+
 async function token(env) {
+  // Secret novo gravado no Cloudflare (ex.: depois de a Meta invalidar a sessão): passa a valer ele, no lugar do renovado no D1.
+  const origem = String(env.THREADS_ACCESS_TOKEN || '').slice(-16);
+  const anotada = await env.DB.prepare("SELECT valor FROM th_config WHERE chave = 'origem'").first();
+  if (!anotada || anotada.valor !== origem) {
+    await guardar(env, 'token', env.THREADS_ACCESS_TOKEN);
+    await guardar(env, 'origem', origem);
+    console.log('threads: usando o token novo do Cloudflare');
+  }
   const salvo = await env.DB.prepare("SELECT valor, atualizado_em FROM th_config WHERE chave = 'token'").first();
   let atual = salvo ? salvo.valor : env.THREADS_ACCESS_TOKEN;
   const idade = salvo ? Date.now() - Date.parse(salvo.atualizado_em) : Infinity;
@@ -107,8 +123,9 @@ export async function rodarFilaThreads(env) {
       await marcar(env, item.id, 'publicado', tentativas, primeiro, null);
       console.log('threads: publicado', item.id, primeiro);
     } catch (e) {
-      const status = primeiro ? 'erro' : (tentativas >= TENTATIVAS_MAX ? 'erro' : 'pendente');
-      await marcar(env, item.id, status, tentativas, primeiro, String(e.message).slice(0, 300));
+      const t = !primeiro && tokenRecusado(e.message) ? tentativas - 1 : tentativas;
+      const status = primeiro ? 'erro' : (t >= TENTATIVAS_MAX ? 'erro' : 'pendente');
+      await marcar(env, item.id, status, t, primeiro, String(e.message).slice(0, 300));
       console.error('threads: falhou', item.id, e.message);
     }
   }

@@ -28,7 +28,23 @@ async function chamar(caminho, params, metodo = 'POST') {
   return dados;
 }
 
+async function guardar(env, chave, valor) {
+  await env.DB.prepare("INSERT INTO ig_config (chave, valor, atualizado_em) VALUES (?, ?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor, atualizado_em = excluded.atualizado_em")
+    .bind(chave, valor, new Date().toISOString()).run();
+}
+
+// Token recusado pela Meta (senha trocada, sessão invalidada, expirado): não é culpa do post, então não gasta tentativa.
+export const tokenRecusado = (msg) => /access token|session has been invalidated|OAuthException/i.test(String(msg));
+
 async function token(env) {
+  // Secret novo gravado no Cloudflare (ex.: depois de a Meta invalidar a sessão): passa a valer ele, no lugar do renovado no D1.
+  const origem = String(env.IG_ACCESS_TOKEN || '').slice(-16);
+  const anotada = await env.DB.prepare("SELECT valor FROM ig_config WHERE chave = 'origem'").first();
+  if (!anotada || anotada.valor !== origem) {
+    await guardar(env, 'token', env.IG_ACCESS_TOKEN);
+    await guardar(env, 'origem', origem);
+    console.log('instagram: usando o token novo do Cloudflare');
+  }
   const salvo = await env.DB.prepare("SELECT valor, atualizado_em FROM ig_config WHERE chave = 'token'").first();
   let atual = salvo ? salvo.valor : env.IG_ACCESS_TOKEN;
   // Renova o token de 60 dias uma vez por semana.
@@ -103,6 +119,7 @@ async function conferirReel(env, post, reg, tk) {
       await marcar(env, post.id, 'erro', reg.tentativas, null, 'vídeo não terminou de processar');
     }
   } catch (e) {
+    if (tokenRecusado(e.message)) return; // segue "processando" até o token voltar (ou passar da hora)
     await marcar(env, post.id, reg.tentativas >= TENTATIVAS_MAX ? 'erro' : 'pendente', reg.tentativas, null, String(e.message).slice(0, 300));
   }
 }
@@ -126,7 +143,8 @@ export async function rodarFila(env) {
       await marcar(env, post.id, 'publicado', tentativas, mediaId, null);
       console.log('instagram: publicado', post.id, mediaId);
     } catch (e) {
-      await marcar(env, post.id, tentativas >= TENTATIVAS_MAX ? 'erro' : 'pendente', tentativas, null, String(e.message).slice(0, 300));
+      const t = tokenRecusado(e.message) ? tentativas - 1 : tentativas;
+      await marcar(env, post.id, t >= TENTATIVAS_MAX ? 'erro' : 'pendente', t, null, String(e.message).slice(0, 300));
       console.error('instagram: falhou', post.id, e.message);
     }
   }

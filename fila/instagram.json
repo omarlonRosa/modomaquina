@@ -311,5 +311,56 @@
       "https://modomaquina.com.br/media/carrossel/mercedes-cla/5.jpg",
       "https://modomaquina.com.br/media/carrossel/mercedes-cla/6.jpg"
     ]
+  },
+  {
+    "id": "2026-10-28-mercedes-cla",
+    "tipo": "CARROSSEL",
+    "publicar_em": "2026-10-28T09:00:00-03:00",
+    "legenda": "Novo Mercedes CLA no Brasil: R$ 364.900. 💸\n\nA Mercedes abriu a pré-venda da terceira geração do sedã, na versão CLA 200 AMG Line: plataforma nova, três telas no painel e teto panorâmico. Mas ainda sem ficha técnica e sem data de entrega.\n\nArrasta pro lado 👉 e conta: Mercedes de entrada ou chinês top de linha?\n\nMatéria completa no link da bio.\nFotos: Mercedes-Benz/Divulgação. Fontes: Mercedes-Benz Brasil (comunicado oficial), Motor1 Brasil e Notícias Automotivas.\n\n#Mercedes #MercedesBenz #CLA #CarrosNovos #Lançamento #ModoMáquina",
+    "midias": [
+      "https://modomaquina.com.br/media/carrossel/mercedes-cla-v2/1.jpg",
+      "https://modomaquina.com.br/media/carrossel/mercedes-cla-v2/2.jpg",
+      "https://modomaquina.com.br/media/carrossel/mercedes-cla-v2/3.jpg",
+      "https://modomaquina.com.br/media/carrossel/mercedes-cla-v2/4.jpg",
+      "https://modomaquina.com.br/media/carrossel/mercedes-cla-v2/5.jpg",
+      "https://modomaquina.com.br/media/carrossel/mercedes-cla-v2/6.jpg"
+    ]
+  },
+  {
+    "id": "2026-10-28-mg-im6",
+    "tipo": "CARROSSEL",
+    "publicar_em": "2026-10-28T15:00:00-03:00",
+    "legenda": "Ele anda de lado. 🦀⚡\n\nO MG IM6, primeiro carro da IM (a marca de luxo do grupo da MG), chegou ao Brasil: SUV elétrico de 4,90 m, de R$ 368.990 a R$ 439.990, com até 752 cv e 0 a 100 km/h em 3,5 s. E as duas versões têm rodas traseiras que esterçam e o \"modo caranguejo\", que desloca o carro na diagonal. Arrasta pro lado 👉\n\nVocê teria um elétrico que anda de lado? Comenta aí 👇\n\n📸 Fotos: IM LS6, nome do IM6 na China (JustAnotherCarDesigner e Jengtingchen/Wikimedia Commons, CC0) · Fontes: Guru dos Carros, Autos Segredos · Matéria completa no site (link na bio) · 📩 Assine o Modo Máquina Semanal no site\n\n#modomaquina #mgim6 #mgmotor #carroeletrico #suveletrico #lancamento",
+    "midias": [
+      "https://modomaquina.com.br/media/carrossel/mg-im6/1.jpg",
+      "https://modomaquina.com.br/media/carrossel/mg-im6/2.jpg",
+      "https://modomaquina.com.br/media/carrossel/mg-im6/3.jpg",
+      "https://modomaquina.com.br/media/carrossel/mg-im6/4.jpg",
+      "https://modomaquina.com.br/media/carrossel/mg-im6/5.jpg",
+      "https://modomaquina.com.br/media/carrossel/mg-im6/6.jpg"
+    ]
+  },
+  {
+    "id": "2026-10-28-mg-im6-story",
+    "tipo": "STORY",
+    "publicar_em": "2026-10-28T15:15:00-03:00",
+    "legenda": "",
+    "midias": [
+      "https://modomaquina.com.br/media/stories/mg-im6.jpg"
+    ]
+  },
+  {
+    "id": "2026-10-31-guia-calibragem",
+    "tipo": "CARROSSEL",
+    "publicar_em": "2026-10-31T15:00:00-03:00",
+    "legenda": "Calibragem de pneu: o jeito certo. 🛞\n\nA pressão certa está na etiqueta do carro (não na lateral do pneu), calibra com o pneu frio e confere pelo menos a cada 15 dias. Arrasta pro lado 👉\n\nQuando foi a última vez que você calibrou o estepe? Comenta aí 👇\n\n📸 Fotos: Antti e Tool Dude8mm/Wikimedia Commons (CC BY 2.0), Fort Rucker (domínio público) · Fontes: Itatiaia, Portal do Trânsito · Guia completo no site (link na bio) · 📩 Assine o Modo Máquina Semanal no site\n\n#modomaquina #calibragem #pneus #manutencaoautomotiva #carros",
+    "midias": [
+      "https://modomaquina.com.br/media/carrossel/calibragem/1.jpg",
+      "https://modomaquina.com.br/media/carrossel/calibragem/2.jpg",
+      "https://modomaquina.com.br/media/carrossel/calibragem/3.jpg",
+      "https://modomaquina.com.br/media/carrossel/calibragem/4.jpg",
+      "https://modomaquina.com.br/media/carrossel/calibragem/5.jpg",
+      "https://modomaquina.com.br/media/carrossel/calibragem/6.jpg"
+    ]
   }
 ]
