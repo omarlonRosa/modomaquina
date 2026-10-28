@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { casaDaEditoria } from '@/lib/casa';
 import { AdSlot, PostCard } from '@/components/ui';
 import { EDITORIAS, editoria, sortedPosts } from '@/lib/content';
 
@@ -19,7 +20,7 @@ export default async function Editoria({ params }) {
   const posts = sortedPosts().filter((p) => p.editoria === slug);
   return (
     <div className="wrap">
-      <AdSlot size="leader" />
+      <AdSlot size="leader" promo={casaDaEditoria(slug)} />
       <section className="sec">
         <span className="kick" style={{ color: ed.color }}>Editoria</span>
         <h1 style={{ fontWeight: 900, fontSize: 'clamp(34px,5vw,60px)', textTransform: 'uppercase', lineHeight: 1, margin: '18px 0 10px' }}>{ed.name}</h1>

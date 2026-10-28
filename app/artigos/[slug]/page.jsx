@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import Newsletter from '@/components/Newsletter';
 import { notFound } from 'next/navigation';
-import { AdSlot, Meta, PostCard } from '@/components/ui';
+import { AdSlot, CasaBox, Meta, PostCard } from '@/components/ui';
+import { casaDoPost } from '@/lib/casa';
 import { POSTS, SITE, editoria, getPost, sortedPosts } from '@/lib/content';
 
 export function generateStaticParams() {
@@ -47,6 +48,7 @@ export default async function Article({ params }) {
   const post = getPost(slug);
   if (!post) notFound();
   const ed = editoria(post.editoria);
+  const casa = casaDoPost(post);
   const mid = Math.floor(post.body.length / 2);
   const more = sortedPosts().filter((p) => p.slug !== post.slug).slice(0, 2);
   const url = `${SITE.url}/artigos/${post.slug}`;
@@ -70,7 +72,7 @@ export default async function Article({ params }) {
   ];
   return (
     <div className="wrap">
-      <AdSlot size="leader" />
+      <AdSlot size="leader" promo={casa[1]} />
       <article className="art">
         <div>
           <Link href={`/editoria/${ed.slug}`} className="kick" style={{ color: ed.color }}>{ed.name}</Link>
@@ -85,7 +87,7 @@ export default async function Article({ params }) {
           )}
           <div className="prose">
             {post.body.slice(0, mid).map((b, i) => <Block key={i} b={b} />)}
-            <AdSlot size="rect" />
+            <AdSlot size="rect" promo={casa[2]} />
             {post.body.slice(mid).map((b, i) => <Block key={i + mid} b={b} />)}
           </div>
           {post.sources.length > 0 && (
@@ -94,6 +96,7 @@ export default async function Article({ params }) {
               <ul>{post.sources.map((s) => <li key={s.url}><a href={s.url} target="_blank" rel="noopener nofollow">{s.label}</a></li>)}</ul>
             </div>
           )}
+          <CasaBox promo={casa[0]} />
           <Newsletter origem={`artigo:${post.slug}`} />
           <div className="share">
             <a className="btn" href={SITE.instagram} target="_blank" rel="noopener">Comentar no Instagram</a>
@@ -102,7 +105,7 @@ export default async function Article({ params }) {
         </div>
         <aside>
           <div style={{ position: 'sticky', top: 90 }}>
-            <AdSlot size="rect" />
+            <AdSlot size="rect" promo={casa[0]} />
           </div>
         </aside>
       </article>

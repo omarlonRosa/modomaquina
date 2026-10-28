@@ -10,7 +10,7 @@ export default function Home() {
   const ed = editoria(lead.editoria);
   return (
     <div className="wrap">
-      <AdSlot size="leader" />
+      <AdSlot size="leader" promo="lockup" />
 
       <section className="hero">
         <Link href={`/artigos/${lead.slug}`}>

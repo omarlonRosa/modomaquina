@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { EDITORIAS, SITE, editoria, fmtDate } from '@/lib/content';
+import { CASA } from '@/lib/casa';
 
 export function Header() {
   return (
@@ -48,6 +49,10 @@ export function Footer() {
               <li><a href={SITE.instagram} target="_blank" rel="noopener">Instagram</a></li>
             </ul>
           </div>
+          <div>
+            <h5>Outros projetos</h5>
+            <ul>{Object.values(CASA).map((c) => <li key={c.marca}><a href={c.href} target="_blank" rel="noopener">{c.marca}</a></li>)}</ul>
+          </div>
         </div>
         <div className="bottom">
           <span>© {new Date().getFullYear()} Modo Máquina · Parauapebas, Pará</span>
@@ -58,12 +63,42 @@ export function Footer() {
   );
 }
 
-export function AdSlot({ size = 'leader' }) {
+export function AdSlot({ size = 'leader', promo }) {
+  const c = promo && CASA[promo];
+  if (c) {
+    return (
+      <a className={`ad casa ${size}`} href={c.href} target="_blank" rel="noopener sponsored" style={{ '--c': c.cor }} aria-label={`Publicidade: ${c.marca}`}>
+        <img src={c.img} alt={c.alt} loading="lazy" />
+        <span className="txt">
+          <small>PUBLICIDADE · {c.marca}</small>
+          <b>{c.titulo}</b>
+        </span>
+        <span className="go">{c.cta} →</span>
+      </a>
+    );
+  }
   return (
     <div className={`ad ${size}`} role="complementary" aria-label="Espaço publicitário">
       <small>PUBLICIDADE</small>
       <Link href="/anuncie">Sua marca aqui → Anuncie no Modo Máquina</Link>
     </div>
+  );
+}
+
+// Quadro grande no fim do artigo, com o projeto que mais combina com o assunto.
+export function CasaBox({ promo }) {
+  const c = CASA[promo];
+  if (!c) return null;
+  return (
+    <a className="casa-box" href={c.href} target="_blank" rel="noopener sponsored" style={{ '--c': c.cor }}>
+      <img src={c.img} alt={c.alt} loading="lazy" />
+      <div>
+        <small>PUBLICIDADE · {c.marca}</small>
+        <h3>{c.titulo}</h3>
+        <p>{c.texto}</p>
+        <span className="btn">{c.cta}</span>
+      </div>
+    </a>
   );
 }
 
