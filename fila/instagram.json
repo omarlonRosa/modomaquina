@@ -364,9 +364,9 @@
     ]
   },
   {
-    "id": "2026-10-28-gp-mexico-agenda",
+    "id": "2026-10-30-gp-mexico-agenda",
     "tipo": "CARROSSEL",
-    "publicar_em": "2026-10-28T18:00:00-03:00",
+    "publicar_em": "2026-10-30T09:00:00-03:00",
     "legenda": "A F1 chega ao México, e o título pode sair lá. 🏁🇲🇽\n\nKimi Antonelli tem 123 pontos de vantagem sobre George Russell e, segundo o Lance!, um 9º lugar no domingo já basta pra ser campeão. A corrida é no domingo, 1º/11, às 17h de Brasília, com SporTV 3, Globoplay e F1 TV. Arrasta pro lado pra ver todos os horários 👉\n\nAntonelli fecha a conta no México ou adia de novo? Comenta aí 👇\n\n📸 Fotos: Scuderia Ferrari · Fontes: Formula 1, Lance!, Exame · Matéria completa no site (link na bio) · 📩 Assine o Modo Máquina Semanal no site\n\n#modomaquina #f1 #formula1 #gpdomexico #antonelli #bortoleto",
     "midias": [
       "https://modomaquina.com.br/media/carrossel/gp-mexico/1.jpg",
@@ -389,6 +389,20 @@
       "https://modomaquina.com.br/media/carrossel/fia-aws-ia/4.jpg",
       "https://modomaquina.com.br/media/carrossel/fia-aws-ia/5.jpg",
       "https://modomaquina.com.br/media/carrossel/fia-aws-ia/6.jpg"
+    ]
+  },
+  {
+    "id": "2026-10-29-jeep-renegade-longitude",
+    "tipo": "CARROSSEL",
+    "publicar_em": "2026-10-29T15:00:00-03:00",
+    "legenda": "Renegade novo na gama: Longitude Flex por R$ 155.690. 🚙\n\nA Jeep comemorou 600 mil Renegades vendidos no Brasil e, no mesmo comunicado, anunciou a versão que chega em novembro: motor 1.3 turboflex de 176 cv, sem o híbrido-leve, com rodas 18, couro, carregador por indução e 6 airbags.\n\nArrasta pro lado 👉 e conta: você pagaria a mais pelo híbrido-leve?\n\nMatéria completa no link da bio.\nFotos: Jeep/Divulgação. Fontes: Jeep (comunicado oficial), Motor1 Brasil e AutoIndústria.\n\n#Jeep #JeepRenegade #Renegade #SUV #CarrosNovos #Lançamento #ModoMáquina",
+    "midias": [
+      "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/1.jpg",
+      "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/2.jpg",
+      "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/3.jpg",
+      "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/4.jpg",
+      "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/5.jpg",
+      "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/6.jpg"
     ]
   }
 ]

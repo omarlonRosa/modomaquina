@@ -340,8 +340,8 @@
     ]
   },
   {
-    "id": "2026-10-28-gp-mexico-agenda",
-    "publicar_em": "2026-10-28T18:05:00-03:00",
+    "id": "2026-10-30-gp-mexico-agenda",
+    "publicar_em": "2026-10-30T09:05:00-03:00",
     "posts": [
       {
         "texto": "A F1 chega ao México e o título pode sair lá. 🏁🇲🇽\n\nAntonelli tem 123 pontos de vantagem sobre Russell e, segundo o Lance!, um 9º lugar no domingo já basta.\n\nCorrida: domingo, 1º/11, às 17h de Brasília (SporTV 3, Globoplay e F1 TV).\n\nFecha a conta ou adia de novo?",
@@ -376,6 +376,26 @@
       },
       {
         "texto": "O que a FIA confirmou, como funciona o atalho da IA e quando isso chega à pista: https://modomaquina.com.br/artigos/fia-aws-inteligencia-artificial-regras-f1"
+      }
+    ]
+  },
+  {
+    "id": "2026-10-29-jeep-renegade-longitude",
+    "publicar_em": "2026-10-29T15:05:00-03:00",
+    "posts": [
+      {
+        "texto": "Renegade novo na gama: Longitude Flex por R$ 155.690. 🚙\n\nA Jeep comemorou 600 mil Renegades vendidos no Brasil e anunciou a versão que chega em novembro: 1.3 turboflex de 176 cv, sem o híbrido-leve, com rodas 18, couro e 6 airbags.\n\nVocê pagaria a mais pelo híbrido-leve?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/6.jpg"
+        ]
+      },
+      {
+        "texto": "Ficha, consumo do Flex x MHEV e onde ele fica na gama: https://modomaquina.com.br/artigos/jeep-renegade-longitude-flex-preco-600-mil"
       }
     ]
   }
