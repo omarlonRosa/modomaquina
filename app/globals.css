@@ -46,6 +46,9 @@ img,svg{display:block;max-width:100%}
 .ad.casa.rect img{width:100%;height:118px;aspect-ratio:auto}
 .ad.casa.rect .txt{padding:12px 14px 0}
 .ad.casa.rect .go{margin:10px 14px 14px;align-self:flex-start}
+.ad.casa.tile{margin:0;width:100%;height:auto;min-height:250px}
+.ad.casa.tile img{height:auto;aspect-ratio:16/10}
+.ad.casa.tile b{font-size:21px}
 @media (max-width:700px){.ad.casa.leader img{display:none}.ad.casa.leader{height:auto;min-height:100px;padding:12px 0 12px 14px;gap:10px}.ad.casa.leader b{font-size:13px}.ad.casa.leader .go{font-size:10px;padding:8px 10px;margin-right:10px;max-width:120px}}
 .casa-box{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:center;border:2px solid var(--c);background:var(--bg2);padding:22px;margin:40px 0 0}
 .casa-box img{width:100%;aspect-ratio:3/2;object-fit:cover;background:#000;border:1px solid var(--line)}

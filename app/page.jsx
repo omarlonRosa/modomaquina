@@ -26,10 +26,7 @@ export default function Home() {
         <h2 className="t">Últimas</h2>
         <div className="grid">
           {rest.map((p) => <PostCard key={p.slug} post={p} />)}
-          <div className="ad rect" style={{ margin: 0, width: '100%', minHeight: 250 }}>
-            <small>PUBLICIDADE</small>
-            <Link href="/anuncie">Sua marca aqui → Anuncie</Link>
-          </div>
+          <AdSlot size="rect tile" promo="ofiapp" />
         </div>
       </section>
 
