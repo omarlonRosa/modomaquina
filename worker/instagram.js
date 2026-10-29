@@ -33,8 +33,8 @@ async function guardar(env, chave, valor) {
     .bind(chave, valor, new Date().toISOString()).run();
 }
 
-// Token recusado pela Meta (senha trocada, sessão invalidada, expirado): não é culpa do post, então não gasta tentativa.
-export const tokenRecusado = (msg) => /access token|session has been invalidated|OAuthException/i.test(String(msg));
+// Token recusado ou acesso bloqueado pela Meta (senha trocada, sessão invalidada, app bloqueado): não é culpa do post, então não gasta tentativa.
+export const tokenRecusado = (msg) => /access token|session has been invalidated|OAuthException|API access blocked/i.test(String(msg));
 
 async function token(env) {
   // Secret novo gravado no Cloudflare (ex.: depois de a Meta invalidar a sessão): passa a valer ele, no lugar do renovado no D1.

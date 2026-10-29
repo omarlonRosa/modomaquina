@@ -404,5 +404,19 @@
       "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/5.jpg",
       "https://modomaquina.com.br/media/carrossel/jeep-renegade-longitude/6.jpg"
     ]
+  },
+  {
+    "id": "2026-10-29-fia-aws-ia-2",
+    "tipo": "CARROSSEL",
+    "publicar_em": "2026-10-29T17:00:00-03:00",
+    "legenda": "A inteligência artificial entrou nas regras da F1. 🤖🏎️\n\nA FIA fechou parceria com a Amazon (AWS): as simulações aerodinâmicas que vão definir a próxima geração de carros rodam nos computadores dela. Segundo a The Race, a IA aprende com centenas de simulações antigas e prevê em minutos o que levaria horas. Mas desenhar o carro sozinha, ainda não. Arrasta pro lado 👉\n\nVocê confia numa regra de F1 testada por IA? Comenta aí 👇\n\n📸 Fotos: Scuderia Ferrari · Fontes: FIA, The Race, Autosport · Matéria completa no site (link na bio) · 📩 Assine o Modo Máquina Semanal no site\n\n#modomaquina #f1 #formula1 #fia #inteligenciaartificial #tecnologia",
+    "midias": [
+      "https://modomaquina.com.br/media/carrossel/fia-aws-ia/1.jpg",
+      "https://modomaquina.com.br/media/carrossel/fia-aws-ia/2.jpg",
+      "https://modomaquina.com.br/media/carrossel/fia-aws-ia/3.jpg",
+      "https://modomaquina.com.br/media/carrossel/fia-aws-ia/4.jpg",
+      "https://modomaquina.com.br/media/carrossel/fia-aws-ia/5.jpg",
+      "https://modomaquina.com.br/media/carrossel/fia-aws-ia/6.jpg"
+    ]
   }
 ]

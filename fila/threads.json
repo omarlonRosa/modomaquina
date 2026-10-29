@@ -398,5 +398,25 @@
         "texto": "Ficha, consumo do Flex x MHEV e onde ele fica na gama: https://modomaquina.com.br/artigos/jeep-renegade-longitude-flex-preco-600-mil"
       }
     ]
+  },
+  {
+    "id": "2026-10-29-fia-aws-ia-2",
+    "publicar_em": "2026-10-29T17:05:00-03:00",
+    "posts": [
+      {
+        "texto": "A IA entrou nas regras da F1. 🤖🏎️\n\nA FIA fechou parceria com a Amazon (AWS): o túnel de vento virtual que vai definir os próximos carros roda na nuvem dela.\n\nSegundo a The Race, a IA prevê em minutos o que a simulação leva horas pra calcular. Desenhar o carro? Ainda não.\n\nVocê confia numa regra testada por IA?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/fia-aws-ia/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/fia-aws-ia/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/fia-aws-ia/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/fia-aws-ia/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/fia-aws-ia/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/fia-aws-ia/6.jpg"
+        ]
+      },
+      {
+        "texto": "O que a FIA confirmou, como funciona o atalho da IA e quando isso chega à pista: https://modomaquina.com.br/artigos/fia-aws-inteligencia-artificial-regras-f1"
+      }
+    ]
   }
 ]
