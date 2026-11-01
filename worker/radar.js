@@ -1,5 +1,5 @@
 // Radar de manchetes: lê feeds RSS/Atom de hora em hora (cron próprio) e guarda no D1 (tabela radar_itens).
-// Sem IA, sem custo. Ver em /api/radar (JSON) ou /api/radar?formato=html. Fontes testadas em 25/10/2026.
+// Sem IA, sem custo. Ver em /api/radar (JSON) ou /api/radar?formato=html. Fontes testadas em 25/10/2026 (ampliadas em 01/11/2026).
 // Pra incluir uma fonte: acrescente em FONTES (nome, categoria, url do feed).
 
 export const FONTES = [
@@ -9,11 +9,16 @@ export const FONTES = [
   ['AutoPapo', 'brasil', 'https://autopapo.com.br/feed/'],
   ['Notícias Automotivas', 'brasil', 'https://www.noticiasautomotivas.com.br/feed/'],
   ['Garagem 360', 'brasil', 'https://garagem360.com.br/feed/'],
+  ['Autoesporte', 'brasil', 'https://autoesporte.globo.com/rss/autoesporte/'],
+  ['UOL Carros', 'brasil', 'https://rss.uol.com.br/feed/carros.xml'],
+  ['AutoIndústria', 'brasil', 'https://www.autoindustria.com.br/feed/'],
   ['Google Notícias: lançamentos no Brasil', 'brasil', 'https://news.google.com/rss/search?q=lan%C3%A7amento%20carro%20Brasil%20when%3A1d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419'],
+  // Serviço: recall, multa, CNH, regras de trânsito
+  ['Google Notícias: recall', 'servico', 'https://news.google.com/rss/search?q=recall%20carro%20when%3A2d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419'],
+  ['Google Notícias: trânsito e CNH', 'servico', 'https://news.google.com/rss/search?q=(multa%20OR%20CNH%20OR%20Detran%20OR%20Contran%20OR%20Senatran)%20when%3A1d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419'],
   // Cultura de garagem: clássicos, tuning, leilões
   ['FlatOut!', 'cultura', 'https://www.flatout.com.br/feed/'],
   ['Hagerty Media', 'cultura', 'https://www.hagerty.com/media/feed/'],
-  ['Bring a Trailer (leilões)', 'cultura', 'https://bringatrailer.com/feed/'],
   ['Jalopnik', 'cultura', 'https://jalopnik.com/rss'],
   // Internacional: lançamentos
   ['Carscoops', 'mundo', 'https://www.carscoops.com/feed/'],
@@ -40,14 +45,18 @@ export const FONTES = [
   ['Motorsport.com Brasil: F1', 'automobilismo', 'https://motorsport.uol.com.br/rss/f1/news/'],
   ['The Race', 'automobilismo', 'https://the-race.com/feed/'],
   ['Autosport: F1', 'automobilismo', 'https://www.autosport.com/rss/f1/news/'],
+  ['Grande Prêmio', 'automobilismo', 'https://grandepremio.com/en/feed/'],
+  ['Google Notícias: Fórmula 1', 'automobilismo', 'https://news.google.com/rss/search?q=F%C3%B3rmula%201%20when%3A1d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419'],
+  // O que o Brasil está buscando agora (todos os assuntos; a triagem filtra o que é de carro, F1 e trânsito)
+  ['Google Trends Brasil', 'tendencias', 'https://trends.google.com/trending/rss?geo=BR'],
   // YouTube
   ['Acelerados (YouTube)', 'youtube', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCGBIIPnw0AYM3BFsmTsjeAw'],
   ['Doug DeMuro (YouTube)', 'youtube', 'https://www.youtube.com/feeds/videos.xml?channel_id=UCsqjHFMB_JYTaEnf_vmTNqg'],
 ];
 
-const CATEGORIAS = { brasil: 'Brasil', cultura: 'Cultura de garagem', mundo: 'Mundo', superesportivos: 'Superesportivos', eletricos: 'Elétricos e China', automobilismo: 'Automobilismo', youtube: 'YouTube' };
+const CATEGORIAS = { tendencias: 'Em alta no Google (Brasil)', brasil: 'Brasil', servico: 'Recall, multa e CNH', cultura: 'Cultura de garagem', mundo: 'Mundo', superesportivos: 'Superesportivos', eletricos: 'Elétricos e China', automobilismo: 'Automobilismo', youtube: 'YouTube' };
 const SCHEMA = `CREATE TABLE IF NOT EXISTS radar_itens (link TEXT PRIMARY KEY, titulo TEXT NOT NULL, fonte TEXT NOT NULL, categoria TEXT NOT NULL, publicado_em TEXT NOT NULL, visto_em TEXT NOT NULL)`;
-const MAX_POR_FEED = 15;
+const MAX_POR_FEED = 25;
 
 const limpa = (s) => (s || '')
   .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/<[^>]+>/g, '')
