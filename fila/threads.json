@@ -558,5 +558,25 @@
         "texto": "O comunicado da Haas, quem é o Hirakawa e onde entra o Câmara: https://modomaquina.com.br/artigos/haas-tira-ocon-gp-mexico-hirakawa-estreia-f1"
       }
     ]
+  },
+  {
+    "id": "2026-11-01-antonelli-campeao",
+    "publicar_em": "2026-11-01T21:05:00-03:00",
+    "posts": [
+      {
+        "texto": "Kimi Antonelli é campeão da F1! 🏆\n\nO 3º lugar no México bastou: aos 20 anos, o piloto da Mercedes vira o campeão mais jovem da história, superando o Vettel. E é o primeiro italiano campeão desde Ascari, em 1953.\n\nVerstappen venceu, Hamilton foi 2º e Bortoleto, 11º. O Kimi vai dominar os próximos anos?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/antonelli-campeao/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/antonelli-campeao/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/antonelli-campeao/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/antonelli-campeao/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/antonelli-campeao/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/antonelli-campeao/6.jpg"
+        ]
+      },
+      {
+        "texto": "O pódio, a corrida maluca e a briga pelo vice: https://modomaquina.com.br/artigos/antonelli-campeao-mundial-f1-2026-gp-mexico"
+      }
+    ]
   }
 ]
