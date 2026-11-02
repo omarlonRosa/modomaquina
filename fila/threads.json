@@ -578,5 +578,25 @@
         "texto": "O pódio, a corrida maluca e a briga pelo vice: https://modomaquina.com.br/artigos/antonelli-campeao-mundial-f1-2026-gp-mexico"
       }
     ]
+  },
+  {
+    "id": "2026-11-01-recall-ram-jeep",
+    "publicar_em": "2026-11-01T22:21:00-03:00",
+    "posts": [
+      {
+        "texto": "⚠️ Recall da Stellantis a partir de 3/11:\n\n• Ram 2500 2018: o módulo do freio pode falhar e afetar ABS, estabilidade e tração\n• Grand Cherokee 2023/2024: airbags laterais da frente podem abrir com atraso\n\nReparo grátis, cerca de 1 hora, com agendamento. Confira o chassi no site da marca. Marca quem tem uma dessas!",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/recall-ram-jeep/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/recall-ram-jeep/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/recall-ram-jeep/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/recall-ram-jeep/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/recall-ram-jeep/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/recall-ram-jeep/6.jpg"
+        ]
+      },
+      {
+        "texto": "Chassis, telefones e como consultar: https://modomaquina.com.br/artigos/recall-ram-2500-2018-jeep-grand-cherokee-freio-airbag"
+      }
+    ]
   }
 ]
