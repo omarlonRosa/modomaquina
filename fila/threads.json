@@ -598,5 +598,45 @@
         "texto": "Chassis, telefones e como consultar: https://modomaquina.com.br/artigos/recall-ram-2500-2018-jeep-grand-cherokee-freio-airbag"
       }
     ]
+  },
+  {
+    "id": "2026-11-02-free-flow-prazo",
+    "publicar_em": "2026-11-02T09:05:00-03:00",
+    "posts": [
+      {
+        "texto": "Pedágio sem cancela (free flow): o prazo pra pagar tarifa atrasada sem multa acaba em 16/11. ⏳\n\nDepois disso, quem tiver passagem em aberto volta a levar multa de R$ 195,23 e 5 pontos na CNH.\n\nConfere no app CNH do Brasil: Veículos > seu carro > Pedágio eletrônico. Você já passou por pórtico sem cancela?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/free-flow-prazo/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/free-flow-prazo/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/free-flow-prazo/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/free-flow-prazo/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/free-flow-prazo/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/free-flow-prazo/6.jpg"
+        ]
+      },
+      {
+        "texto": "Passo a passo, reembolso de quem já pagou multa e o que muda em 17/11: https://modomaquina.com.br/artigos/pedagio-free-flow-prazo-16-novembro-pagar-sem-multa"
+      }
+    ]
+  },
+  {
+    "id": "2026-11-01-senna-nsx-leilao",
+    "publicar_em": "2026-11-02T12:05:00-03:00",
+    "posts": [
+      {
+        "texto": "O Honda NSX do Ayrton Senna foi vendido por £871.250 no leilão da RM Sotheby's em Londres. 🏁\n\nÉ o NSX 1991 vermelho que a Honda deixava pro Senna em Portugal, o da foto clássica lavando o carro com mangueira. A estimativa ia até £800 mil. Em reais, cerca de R$ 6,3 milhões, segundo a Quatro Rodas.\n\nVocê pagaria isso num NSX por ele ter sido do Senna?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/senna-nsx/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/senna-nsx/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/senna-nsx/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/senna-nsx/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/senna-nsx/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/senna-nsx/6.jpg"
+        ]
+      },
+      {
+        "texto": "A história do carro, do Estoril em 1991 ao leilão em Londres: https://modomaquina.com.br/artigos/honda-nsx-ayrton-senna-leilao-vendido-871-mil-libras"
+      }
+    ]
   }
 ]
