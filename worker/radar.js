@@ -12,9 +12,10 @@ export const FONTES = [
   ['Autoesporte', 'brasil', 'https://autoesporte.globo.com/rss/autoesporte/'],
   ['UOL Carros', 'brasil', 'https://rss.uol.com.br/feed/carros.xml'],
   ['AutoIndústria', 'brasil', 'https://www.autoindustria.com.br/feed/'],
+  ['Autos Segredos', 'brasil', 'https://www.autossegredos.com.br/feed/'],
   ['Google Notícias: lançamentos no Brasil', 'brasil', 'https://news.google.com/rss/search?q=lan%C3%A7amento%20carro%20Brasil%20when%3A1d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419'],
   // Serviço: recall, multa, CNH, regras de trânsito
-  ['Google Notícias: recall', 'servico', 'https://news.google.com/rss/search?q=recall%20carro%20when%3A2d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419'],
+  ['Google Notícias: recall', 'servico', 'https://news.google.com/rss/search?q=recall%20when%3A2d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419'],
   ['Google Notícias: trânsito e CNH', 'servico', 'https://news.google.com/rss/search?q=(multa%20OR%20CNH%20OR%20Detran%20OR%20Contran%20OR%20Senatran)%20when%3A1d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419'],
   // Cultura de garagem: clássicos, tuning, leilões
   ['FlatOut!', 'cultura', 'https://www.flatout.com.br/feed/'],
