@@ -718,5 +718,25 @@
         "texto": "A lista dos chassis e como agendar: https://modomaquina.com.br/artigos/recall-ford-f150-2025-2026-parafusos-bancos-dianteiros"
       }
     ]
+  },
+  {
+    "id": "2026-11-05-imposto-seletivo",
+    "publicar_em": "2026-11-05T21:50:00-03:00",
+    "posts": [
+      {
+        "texto": "Saiu o \"imposto do pecado\" dos carros. 💸\n\nA MP 1.399 troca o IPI pelo Imposto Seletivo em 2/2/2027: base de 6,3% (passeio) e 3,9% (picape), gasolina +6,5 pontos, diesel +12, elétrico −2, tudo × 1,21.\n\nAlíquota zero pra PcD, TEA, taxista e as versões 1.0 do Carro Sustentável (Onix, HB20, Mobi, Kwid, Polo...).\n\nSeu carro paga mais ou menos?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/imposto-seletivo/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/imposto-seletivo/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/imposto-seletivo/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/imposto-seletivo/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/imposto-seletivo/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/imposto-seletivo/6.jpg"
+        ]
+      },
+      {
+        "texto": "A tabela completa, os 12 modelos isentos e o que ainda pode mudar: https://modomaquina.com.br/artigos/imposto-seletivo-imposto-do-pecado-carros-2027-aliquotas-isencao"
+      }
+    ]
   }
 ]
