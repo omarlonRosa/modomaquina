@@ -123,6 +123,30 @@
   #posicao { display: none; margin: 2px auto 0; padding: 3px 10px; border-radius: 8px; font-weight: 800; font-size: 14px; background: #1f7a3ccc; width: max-content; }
   #posicao.on { display: block; }
   #posicao.atras { background: #b3121bcc; }
+  /* arrancada */
+  .bt.forte2 { background: #1f4fb0; }
+  .so-drag { display: none; }
+  body.arrancada .so-drag { display: inline; } body.arrancada .so-normal { display: none; }
+  body.arrancada .tq.esq, body.arrancada .tq.dir { display: none; }
+  body.arrancada .tq.mao { left: max(14px, env(safe-area-inset-left)); right: auto; bottom: max(18px, env(safe-area-inset-bottom)); width: 190px; height: 104px; font-size: 18px; border-color: #ffd36a99; }
+  #drag { left: 50%; top: max(12px, env(safe-area-inset-top)); transform: translateX(-50%); text-align: center; display: none; width: min(340px, 70vw); }
+  body.jogando #drag.on { display: block; }
+  #arvore { display: inline-flex; gap: 10px; padding: 8px 12px; background: #0b1020d9; border-radius: 14px; }
+  #arvore i { width: 26px; height: 26px; border-radius: 50%; background: #3a2a00; box-shadow: inset 0 0 0 2px #0006; }
+  #arvore i.on { background: #ffb300; box-shadow: 0 0 16px #ffb300; }
+  #arvore i.verde { background: #0b2a12; } #arvore i.verde.on { background: #2dff6a; box-shadow: 0 0 20px #2dff6a; }
+  #arvore i.vermelho { background: #ff2a1f !important; box-shadow: 0 0 16px #ff2a1f !important; }
+  #drag-info { margin: 6px 0; font-weight: 800; font-size: 16px; text-shadow: 0 2px 8px #000c; min-height: 20px; }
+  #tacometro { position: relative; height: 20px; margin: 4px 34px 0 0; background: #ffffff1c; border-radius: 6px; overflow: visible; }
+  #tacometro .zona { position: absolute; left: 90%; width: 9.3%; top: 0; bottom: 0; background: #2dff6a55; border-radius: 3px; }
+  #tac-agulha { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #f4f2ee; border-radius: 6px; }
+  #tac-agulha.zona { background: #2dff6a; box-shadow: 0 0 12px #2dff6a; } #tac-agulha.corte { background: #ff2a1f; }
+  #tac-marcha { position: absolute; right: -34px; top: -8px; font-size: 30px; font-weight: 900; font-style: italic; }
+  #drag-pista { position: relative; height: 22px; margin-top: 8px; border-radius: 6px; background: linear-gradient(90deg, #ffffff10 0 97%, #fff 97% 100%); }
+  #drag-pista span { position: absolute; top: 2px; transform: translateX(-50%); font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 5px; background: #2f7bff; }
+  #drag-pista #drag-ele { background: #ff2a1f; top: 2px; }
+  body.arrancada #painel-racha, body.arrancada #rua { display: none !important; }
+  body.arrancada #aviso { top: 56%; font-size: clamp(20px, 4.2vw, 40px); }
   #grana { margin: 10px 0 0; font-weight: 700; color: #7dffa0; font-size: 14px; }
   #fim-titulo { font-size: 15px; font-weight: 800; color: #ffb27f; }
   #fim .num { font-size: 56px; font-weight: 900; font-style: italic; margin: 4px 0; font-variant-numeric: tabular-nums; }
@@ -132,16 +156,17 @@
  "imports": {
   "three": "./vendor/three/build/three.module.js",
   "three/addons/": "./vendor/three/examples/jsm/",
-  "./js/carro.js": "./js/carro.js?v=f8a387f69e",
-  "./js/construcoes.js": "./js/construcoes.js?v=f8a387f69e",
-  "./js/controles.js": "./js/controles.js?v=f8a387f69e",
-  "./js/hud.js": "./js/hud.js?v=f8a387f69e",
-  "./js/lockup.js": "./js/lockup.js?v=f8a387f69e",
-  "./js/main.js": "./js/main.js?v=f8a387f69e",
-  "./js/marcos.js": "./js/marcos.js?v=f8a387f69e",
-  "./js/mundo.js": "./js/mundo.js?v=f8a387f69e",
-  "./js/racha.js": "./js/racha.js?v=f8a387f69e",
-  "./js/rival.js": "./js/rival.js?v=f8a387f69e"
+  "./js/arrancada.js": "./js/arrancada.js?v=14385dbfe7",
+  "./js/carro.js": "./js/carro.js?v=14385dbfe7",
+  "./js/construcoes.js": "./js/construcoes.js?v=14385dbfe7",
+  "./js/controles.js": "./js/controles.js?v=14385dbfe7",
+  "./js/hud.js": "./js/hud.js?v=14385dbfe7",
+  "./js/lockup.js": "./js/lockup.js?v=14385dbfe7",
+  "./js/main.js": "./js/main.js?v=14385dbfe7",
+  "./js/marcos.js": "./js/marcos.js?v=14385dbfe7",
+  "./js/mundo.js": "./js/mundo.js?v=14385dbfe7",
+  "./js/racha.js": "./js/racha.js?v=14385dbfe7",
+  "./js/rival.js": "./js/rival.js?v=14385dbfe7"
  }
 }
 </script>
@@ -162,10 +187,11 @@
     <h1>RACHA<br><span>PARAUAPEBAS</span></h1>
     <p class="sub">Uno 1.6R, noite, ruas de verdade. Saída da Lock-Up Auto Center.</p>
     <button class="bt forte" data-acao="racha">Racha contra o Zé Turbo<small>Saída da Lock-Up, 1,8 km, boa parte pela PA-160. Vale grana</small></button>
+    <button class="bt forte2" data-acao="arrancada">Arrancada na PA-160<small>402 m contra o Zé Turbo: solte o freio no verde e troque marcha no giro certo</small></button>
     <button class="bt" data-acao="relogio">Contra o relógio<small>O mesmo percurso, sozinho, atrás do recorde</small></button>
     <button class="bt" data-acao="livre">Rodar livre<small>Explore o bairro sem cronômetro</small></button>
     <p id="grana"></p>
-    <p class="ajuda so-teclado">W A S D ou setas · Shift: nitro · Espaço: freio de mão · C: câmera · R: voltar pra rua · M: som · Esc: menu</p>
+    <p class="ajuda so-teclado">W A S D ou setas · Shift: nitro · arrancada: segure S + W, solte S no verde, Espaço ou E troca a marcha · Espaço: freio de mão · C: câmera · R: voltar pra rua · M: som · Esc: menu</p>
     <p id="dica-tela"><b>Tela cheia no iPhone:</b> o Safari não deixa o site ocupar a tela toda. Toque em Compartilhar <span aria-hidden="true">(□↑)</span> → <b>Adicionar à Tela de Início</b> e abra o jogo pelo ícone "Racha PBS": ele abre sem barras, deitado.</p>
     <p class="ajuda so-toque">Gire o celular na horizontal · ◀ ▶ para virar · botões da direita: acelerar, nitro, freio/ré e freio de mão · segure ACELERA na contagem para a largada perfeita</p>
     <p class="creditos">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores do OpenStreetMap</a> (ODbL) ·
@@ -203,18 +229,24 @@
   <button class="ic" data-acao="menu" title="Menu (Esc)" aria-label="Menu">☰</button>
 </div>
 
+<div class="hud" id="drag">
+  <div id="arvore"><i></i><i></i><i></i><i class="verde"></i></div>
+  <div id="drag-info"></div>
+  <div id="tacometro"><div class="zona"></div><div id="tac-agulha"></div><b id="tac-marcha">1</b></div>
+  <div id="drag-pista"><span id="drag-eu">VOCÊ</span><span id="drag-ele">ZÉ</span></div>
+</div>
 <div id="linhas" aria-hidden="true"></div>
 <div id="girar"><div><span>📱↻</span>Gire o celular na horizontal para dirigir</div></div>
 
 <div class="toques">
   <div class="tq esq" data-toque="esq">◀</div>
   <div class="tq dir" data-toque="dir">▶</div>
-  <div class="tq mao" data-toque="mao">MÃO</div>
+  <div class="tq mao" data-toque="mao"><span class="so-normal">MÃO</span><span class="so-drag">MARCHA ▲</span></div>
   <div class="tq freio" data-toque="freio">FREIO</div>
   <div class="tq acel" data-toque="acel">ACELERA</div>
   <div class="tq nitro" data-toque="nitro">NITRO</div>
 </div>
 
-<script type="module" src="js/main.js?v=f8a387f69e"></script>
+<script type="module" src="js/main.js?v=14385dbfe7"></script>
 </body>
 </html>

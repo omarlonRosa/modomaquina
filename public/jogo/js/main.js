@@ -8,6 +8,7 @@ import { Controles } from './controles.js';
 import { Hud } from './hud.js';
 import { Racha } from './racha.js';
 import { Rival, colisaoCarros } from './rival.js';
+import { Arrancada } from './arrancada.js';
 
 const celular = matchMedia('(pointer: coarse)').matches;
 document.body.classList.toggle('toque', celular);
@@ -72,7 +73,7 @@ async function baixar(url, peso, base) {
   return out.buffer;
 }
 
-let mundo, carro, hud, racha, lockup, som, controles, rival;
+let mundo, carro, hud, racha, lockup, som, controles, rival, arrancada;
 let modo = 'menu', camModo = 0, vidros = [];
 const CAMS = [{ d: 5.4, h: 2.0, olhar: 1.0 }, { d: 9, h: 3.8, olhar: 1.2 }, { d: -0.35, h: 1.12, olhar: 1.0, dentro: true }];
 
@@ -99,6 +100,7 @@ async function iniciar() {
   hud = new Hud(mapa, mapa.lockup, mundo.lotes.concat(areasMarcos(mapa.lockup).slice(0, 2).map(p => ({ p }))));
   racha = new Racha(mapa.racha, scene, mundo);
   rival = new Rival(gltfRival, scene, racha);
+  arrancada = new Arrancada(racha, scene, THREE);
   mostrarGrana();
   som = new Som();
   carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
@@ -120,7 +122,26 @@ function ligarAcoes() {
     menu.classList.remove('on'); fim.classList.remove('on');
     document.body.classList.add('jogando');
     carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
-    racha.parar();
+    racha.parar(); arrancada.parar();
+    const btRepetir = document.querySelector('#fim [data-acao]');
+    if (tipo === 'arrancada') {
+      modo = 'arrancada'; carro.avaria = 0;
+      arrancada.iniciar(carro, rival, hud, (r) => {
+        modo = 'livre';
+        document.getElementById('fim-titulo').textContent = r.queimou ? 'Queimou a largada' : r.ganhou ? 'Você ganhou a arrancada!' : `${r.rival} ganhou a arrancada`;
+        document.getElementById('fim-tempo').textContent = r.tempo;
+        document.getElementById('fim-recorde').textContent = `Reação ${r.reacao} · ${r.kmh} km/h no fim · ${r.rival}: ${r.tRival}`;
+        document.getElementById('fim-dist').textContent = r.novo ? 'Novo recorde nos 402 m neste aparelho!' : r.recorde ? `Seu recorde nos 402 m: ${r.recorde}` : '402 m na PA-160';
+        document.getElementById('fim-grana').textContent = r.premio ? `+ R$ ${r.premio} pro caixa da garagem · caixa: R$ ${r.grana}` : '';
+        btRepetir.dataset.acao = 'arrancada'; btRepetir.textContent = r.ganhou ? 'Correr de novo' : 'Revanche';
+        mostrarGrana();
+        document.getElementById('aviso').classList.remove('on');
+        fim.classList.add('on');
+      });
+      posicionarCamera(1, true);          // a largada fica longe da Lock-Up: a câmera já começa atrás do carro
+      return;
+    }
+    btRepetir.dataset.acao = 'racha';
     if (tipo === 'racha' || tipo === 'relogio') {
       modo = 'racha';
       const contra = tipo === 'racha';
@@ -151,9 +172,11 @@ function ligarAcoes() {
     livre: () => jogar('livre'),
     racha: () => jogar('racha'),
     relogio: () => jogar('relogio'),
+    arrancada: () => jogar('arrancada'),
     camera: () => { camModo = (camModo + 1) % CAMS.length; },
     som: () => { som.iniciar(); som.mudo = !som.mudo; document.querySelector('[data-acao=som]').classList.toggle('mudo', som.mudo); },
     reset: () => {
+      if (modo === 'arrancada') return;
       const i = mundo.infoRua(carro.pos.x, carro.pos.z, 200);
       if (i.rua) {
         let ang = i.dir; if (Math.cos(ang - carro.ang) < 0) ang += Math.PI;
@@ -162,7 +185,7 @@ function ligarAcoes() {
     },
     menu: () => {
       if (modo === 'menu') return;
-      racha.parar(); modo = 'menu'; som.pausar();
+      racha.parar(); arrancada.parar(); modo = 'menu'; som.pausar();
       document.body.classList.remove('jogando'); fim.classList.remove('on'); menu.classList.add('on');
     },
     primeiroToque: () => { if (modo !== 'menu') som.iniciar(); },   // no menu fica quieto; o clique de jogar já liga o som
@@ -219,7 +242,13 @@ function loop(t) {
   const dt = Math.min(0.05, (t - ultimo) / 1000); ultimo = t;
   if (document.hidden) return;
   const inp = modo === 'menu' ? { acel: 0, freio: 0, dir: 0, mao: false } : controles.ler(dt, carro.kmh);
-  if (modo !== 'menu') {
+  if (modo === 'arrancada') {
+    // arrancada: a física em linha fica em arrancada.js (posiciona os dois carros)
+    arrancada.update(dt, inp);
+    if (carro.nitroAtivo !== nitroAntes) { nitroAntes = carro.nitroAtivo; document.body.classList.toggle('nitro', nitroAntes); }
+    hud.update(dt, carro, null);
+    som.update(carro, inp.acel);
+  } else if (modo !== 'menu') {
     acc += dt;
     const rInp = rival.ativo ? rival.pensar(dt, racha.sJogador || 0, racha.largando) : null;
     while (acc >= PASSO) {
@@ -274,7 +303,7 @@ function telaCheia() {
 document.addEventListener('visibilitychange', () => { if (document.hidden && som) som.pausar(); else if (som && modo !== 'menu') som.iniciar(); });
 
 iniciar().catch(e => { console.error(e); progresso(0, 'Não deu para carregar: ' + e.message); });
-window._jogo = () => ({ carro, mundo, camera, scene, renderer, racha, controles, rival });
+window._jogo = () => ({ carro, mundo, camera, scene, renderer, racha, controles, rival, arrancada });
 // teste sem a aba visível: simula N segundos com uma entrada fixa e desenha um quadro
 window._simular = (seg, inp = {}) => {
   const e = { acel: 0, freio: 0, dir: 0, mao: false, ...inp };

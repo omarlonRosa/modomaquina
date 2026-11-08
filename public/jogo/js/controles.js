@@ -90,7 +90,7 @@ export class Controles {
     const acel = (t.has('KeyW') || t.has('ArrowUp') || q.acel) ? 1 : 0;
     const freio = (t.has('KeyS') || t.has('ArrowDown') || q.freio) ? 1 : 0;
     const dir = ((t.has('KeyA') || t.has('ArrowLeft') || q.esq) ? 1 : 0) - ((t.has('KeyD') || t.has('ArrowRight') || q.dir) ? 1 : 0);
-    const mao = t.has('Space') || q.mao;
+    const mao = t.has('Space') || t.has('KeyE') || q.mao;          // na arrancada é a troca de marcha
     const nitro = t.has('ShiftLeft') || t.has('ShiftRight') || t.has('KeyN') || q.nitro;
     // travado (contagem da largada): o carro fica parado, mas dá para acelerar o motor (largada perfeita)
     if (this.travado) { this.v = 0; this.f = 0; this.a = chegar(this.a, acel, (acel ? 4 : 8) * dt); return { acel: this.a, freio: 0, dir: 0, mao: false, nitro: false, parado: true }; }
