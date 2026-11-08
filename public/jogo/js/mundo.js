@@ -486,6 +486,16 @@ export class Mundo {
     return lista;
   }
 
+  // folga entre um ponto e a borda de QUALQUER rua por perto (negativo = em cima da pista)
+  folgaRuas(x, z) {
+    let f = 1e9;
+    for (const sg of this.ruas.perto(x, z, 20)) {
+      const [qx, qz] = pontoSeg(x, z, sg);
+      f = Math.min(f, Math.hypot(x - qx, z - qz) - sg.rua.w / 2);
+    }
+    return f;
+  }
+
   postes(ruas, poucos) {
     const lista = [], ocupado = new Grade(14);
     const passo = poucos ? 44 : 34;
@@ -497,8 +507,9 @@ export class Mundo {
         const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz); if (L < 0.1) continue;
         const nx = -dz / L, nz = dx / L;
         while (acc < L) {
-          const x = a[0] + dx * acc / L + nx * (r.w / 2 + 1.1) * lado, z = a[1] + dz * acc / L + nz * (r.w / 2 + 1.1) * lado;
-          let livre = true;
+          const x = a[0] + dx * acc / L + nx * (r.w / 2 + 1.35) * lado, z = a[1] + dz * acc / L + nz * (r.w / 2 + 1.35) * lado;
+          // nos cruzamentos o poste de uma rua caía na pista da outra: exige 1,2 m de qualquer pista
+          let livre = this.folgaRuas(x, z) > 1.2;
           for (const o of ocupado.perto(x, z, 14)) if (Math.hypot(o[0] - x, o[1] - z) < 14) { livre = false; break; }
           if (livre && Math.hypot(x, z) < this.raio) { const p = [x, z, Math.atan2(-nx * lado, -nz * lado)]; lista.push(p); ocupado.add(p, x, z, x, z); }
           acc += passo; lado = r.c >= 3 ? lado : -lado;
@@ -536,7 +547,7 @@ export class Mundo {
         const nx = dz / L, nz = -dx / L;                 // esquerda de quem dirige = lado do canteiro
         while (acc < L) {
           const x = a[0] + dx * acc / L + nx * (r.w / 2 + 1.6), z = a[1] + dz * acc / L + nz * (r.w / 2 + 1.6);
-          let livre = Math.hypot(x, z) < this.raio && this.infoRua(x, z, 10).dist > 4.6;
+          let livre = Math.hypot(x, z) < this.raio && this.folgaRuas(x, z) > 0.9;
           for (const o of ocupado.perto(x, z, 26)) if (Math.hypot(o[0] - x, o[1] - z) < 26) { livre = false; break; }
           if (livre) { const p = [x, z, Math.atan2(nx, nz)]; lista.push(p); ocupado.add(p, x, z, x, z); }
           acc += passo;
