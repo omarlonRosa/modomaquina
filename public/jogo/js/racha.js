@@ -156,6 +156,7 @@ export class Racha {
     this.i = 0; this.t = 0; this.ativo = true; this.contagem = 3.5; this.fim = aoTerminar; this.contou = false;
     this.iRota = 0; this.setaAng = 0; this.sJogador = 0;
     this.rival = opcoes.rival || null; this.tempoRival = null;
+    this.premio = opcoes.premio || [300, 50];         // [venceu, perdeu]; a carreira paga à parte (premio [0, 0])
     this.el.pos = this.el.pos || document.getElementById('posicao');
     this.el.pos.classList.toggle('on', !!this.rival);
     this.hud = hud; this.controles = controles; controles.travado = true;
@@ -180,6 +181,14 @@ export class Racha {
   }
 
   acompanhar(x, z) { return this.progresso(this, x, z); }
+
+  // largada lado a lado no começo da rota (jogador à direita, rival à esquerda)
+  largada() {
+    const [x, z] = this.pontoNa(10), [x2, z2] = this.pontoNa(14);
+    const dx = x2 - x, dz = z2 - z, L = Math.hypot(dx, dz) || 1, ang = Math.atan2(dx, dz);
+    const lado = (k) => ({ x: x - dz / L * k, z: z + dx / L * k, ang });
+    return { jogador: lado(1.7), rival: lado(-1.7) };
+  }
 
   // ponto da rota na faixa da direita (nas ruas de mão dupla), para o rival dirigir na mão certa
   pontoFaixa(s) {
@@ -317,21 +326,22 @@ export class Racha {
   terminar() {
     const tempo = this.t;
     let recorde = null;
-    try { recorde = parseFloat(localStorage.getItem('racha-lockup-recorde-v2')); } catch {}
+    const chave = this.dados.id ? 'racha-recorde-' + this.dados.id : 'racha-lockup-recorde-v2';
+    try { recorde = parseFloat(localStorage.getItem(chave)); } catch {}
     const novo = !recorde || tempo < recorde;
-    if (novo) try { localStorage.setItem('racha-lockup-recorde-v2', String(tempo)); } catch {}
+    if (novo) try { localStorage.setItem(chave, String(tempo)); } catch {}
     // contra o rival: quem cruzou primeiro e a grana pro caixa da garagem
     let posicao = null, premio = 0, tRival = null;
     if (this.rival) {
       posicao = this.tempoRival === null ? 1 : 2;
       tRival = this.tempoRival === null ? null : fmt(this.tempoRival);
-      premio = posicao === 1 ? 300 : 50;
+      premio = posicao === 1 ? this.premio[0] : this.premio[1];
     }
     let grana = 0;
     try { grana = (parseInt(localStorage.getItem('racha-grana')) || 0) + premio; if (premio) localStorage.setItem('racha-grana', String(grana)); } catch {}
     const nome = this.rival ? this.rival.nome : null;
     this.parar();
-    this.fim({ tempo: fmt(tempo), recorde: novo ? null : fmt(recorde), novo, metros: this.dados.metros, posicao, premio, grana, rival: nome, tRival });
+    this.fim({ tempo: fmt(tempo), segundos: tempo, recorde: novo ? null : fmt(recorde), novo, metros: this.dados.metros, posicao, premio, grana, rival: nome, tRival });
   }
 }
 

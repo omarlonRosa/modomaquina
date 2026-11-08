@@ -4,7 +4,7 @@
 // do verde perde o tempo de reação. Câmbio na mão: MARCHA (Espaço/E ou botão) — trocar com o
 // ponteiro no verde do conta-giros dá um empurrão. Nitro quando quiser (um cilindro).
 // A física aqui é em linha (1D) sobre a reta, para a disputa ser de largada, troca e nitro.
-const DIST = 402;
+const DIST = 402;                     // padrão; a carreira também corre 201 m
 const S0 = 560;                       // onde fica a largada, em metros do percurso do racha (trecho reto)
 const VG = [13.2, 22, 30.5, 39, 49.5]; // m/s no corte de giro de cada marcha
 const AG = [7.4, 5.5, 4.2, 3.25, 2.55]; // aceleração "cheia" de cada marcha
@@ -71,6 +71,8 @@ export class Arrancada {
       scene.add(m); return m;
     };
     this.linhas = [faixa(0, false), faixa(DIST, true)];
+    this.chegada201 = faixa(201, true);
+    this.dist = DIST;
     this.el = {
       box: document.getElementById('drag'), luzes: [...document.querySelectorAll('#arvore i')], info: document.getElementById('drag-info'),
       agulha: document.getElementById('tac-agulha'), marcha: document.getElementById('tac-marcha'),
@@ -85,7 +87,9 @@ export class Arrancada {
     return { x: x + dz / L * 1.9 * lado, z: z - dx / L * 1.9 * lado, ang: Math.atan2(dx, dz) };
   }
 
-  iniciar(carro, rival, hud, aoTerminar) {
+  // opcoes.dist (201 ou 402), opcoes.premio [venceu, perdeu]
+  iniciar(carro, rival, hud, aoTerminar, opcoes = {}) {
+    this.dist = opcoes.dist === 201 ? 201 : DIST; this.premio = opcoes.premio || [200, 30];
     this.carro = carro; this.rival = rival; this.hud = hud; this.fim = aoTerminar;
     this.eu = piloto(carro.mods, carro.ficha); this.ele = piloto(rival.carro.mods, rival.carro.ficha);
     this.eu.nitro = 1; this.ele.nitro = 1;
@@ -94,7 +98,7 @@ export class Arrancada {
     // rival: reação e jeito de trocar sorteados (às vezes ele erra a troca e perde tempo)
     this.ia = { reacao: 0.2 + Math.random() * 0.2, trocaEm: () => Math.random() < 0.18 ? 5350 + Math.random() * 300 : 6150 + Math.random() * 800, nitroNa: Math.random() < 0.7 ? 2 : 3 };
     this.ativo = true;
-    this.linhas.forEach(m => (m.visible = true));
+    this.linhas[0].visible = true; this.linhas[1].visible = this.dist === DIST; this.chegada201.visible = this.dist === 201;
     rival.carro.grupo.visible = true;
     if (rival.marca) rival.marca.visible = false;     // na faixa do lado a plaquinha fica enorme
     this.el.box.classList.add('on'); document.body.classList.add('arrancada');
@@ -107,7 +111,7 @@ export class Arrancada {
   parar() {
     if (!this.ativo) return;
     this.ativo = false;
-    this.linhas.forEach(m => (m.visible = false));
+    this.linhas.forEach(m => (m.visible = false)); this.chegada201.visible = false;
     if (this.rival && !this.rival.ativo) this.rival.carro.grupo.visible = false;
     if (this.rival && this.rival.marca) this.rival.marca.visible = true;
     this.el.box.classList.remove('on'); document.body.classList.remove('arrancada');
@@ -158,7 +162,7 @@ export class Arrancada {
         passo(eu, h, eu.tempo === null ? (eu.largou ? acel : acel) : 0, eu.tempo === null && inp.nitro);
         passo(ele, h, ele.tempo === null ? 1 : 0, ele.tempo === null && ele.g >= this.ia.nitroNa);
         for (const p of [eu, ele]) {
-          if (p.tempo === null && p.s >= DIST) { p.tempo = this.t - this.tVerde; p.vFinal = p.v; }
+          if (p.tempo === null && p.s >= this.dist) { p.tempo = this.t - this.tVerde; p.vFinal = p.v; }
           if (p.tempo !== null) p.v = Math.max(0, p.v - 7 * h);               // freia depois da chegada
         }
       }
@@ -175,8 +179,8 @@ export class Arrancada {
     this.el.agulha.classList.toggle('zona', eu.rpm >= ZONA[0] && eu.rpm <= ZONA[1]);
     this.el.agulha.classList.toggle('corte', eu.rpm > ZONA[1]);
     this.el.marcha.textContent = eu.g + 1;
-    this.el.eu.style.left = Math.min(100, eu.s / DIST * 100) + '%';
-    this.el.ele.style.left = Math.min(100, ele.s / DIST * 100) + '%';
+    this.el.eu.style.left = Math.min(100, eu.s / this.dist * 100) + '%';
+    this.el.ele.style.left = Math.min(100, ele.s / this.dist * 100) + '%';
   }
 
   terminar() {
@@ -185,15 +189,16 @@ export class Arrancada {
     const ganhou = !eu.queimou && eu.tempo !== null && eu.tempo < tEle;
     let recorde = null, novo = false;
     if (!eu.queimou && eu.tempo !== null) {
-      try { recorde = parseFloat(localStorage.getItem('arrancada-recorde')); } catch {}
+      const chave = this.dist === DIST ? 'arrancada-recorde' : 'arrancada-recorde-' + this.dist;
+      try { recorde = parseFloat(localStorage.getItem(chave)); } catch {}
       novo = !recorde || eu.tempo < recorde;
-      if (novo) try { localStorage.setItem('arrancada-recorde', String(eu.tempo)); } catch {}
+      if (novo) try { localStorage.setItem(chave, String(eu.tempo)); } catch {}
     }
-    const premio = ganhou ? 200 : eu.queimou ? 0 : 30;
+    const premio = ganhou ? this.premio[0] : eu.queimou ? 0 : this.premio[1];
     let grana = 0;
     try { grana = (parseInt(localStorage.getItem('racha-grana')) || 0) + premio; if (premio) localStorage.setItem('racha-grana', String(grana)); } catch {}
     const r = {
-      ganhou, queimou: eu.queimou, rival: this.rival.nome, premio, grana, novo,
+      ganhou, queimou: eu.queimou, rival: this.rival.nome, premio, grana, novo, dist: this.dist,
       tempo: eu.tempo !== null && !eu.queimou ? fmt(eu.tempo) : '—',
       tRival: ele.tempo !== null ? fmt(ele.tempo) : '—',
       reacao: eu.reacao > 0 ? eu.reacao.toFixed(3).replace('.', ',') + ' s' : '—',

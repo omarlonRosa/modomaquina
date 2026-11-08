@@ -27,6 +27,7 @@ export class Rival {
     this.nome = nome; this.racha = racha;
     this.carro = new Carro(gltfClone, scene, { cor, leve: true });
     this.marca = plaquinha(nome); this.carro.grupo.add(this.marca);
+    this.elastico = true;          // na carreira os chefes correm sem aliviar
     this.est = { iRota: 0, distRota: 0 };
     this.s = 0; this.ativo = false; this.chegou = false; this.preso = 0;
     this.carro.grupo.visible = false;
@@ -41,6 +42,15 @@ export class Rival {
   }
 
   parar() { this.ativo = false; this.carro.grupo.visible = false; }
+
+  // outro piloto (carreira): troca o nome e a plaquinha
+  nomear(nome) {
+    if (nome === this.nome) return;
+    this.nome = nome;
+    const vis = this.marca.visible;
+    this.carro.grupo.remove(this.marca); this.marca.material.map.dispose(); this.marca.material.dispose();
+    this.marca = plaquinha(nome); this.marca.visible = vis; this.carro.grupo.add(this.marca);
+  }
 
   // decide os comandos do frame; a física roda no passo fixo do jogo (main.js)
   pensar(dt, sJogador, largando) {
@@ -58,19 +68,23 @@ export class Rival {
     const erro = embrulhar(Math.atan2(tx - c.pos.x, tz - c.pos.z) - c.ang);
     const dir = lim(erro * 2.4, -1, 1);
     // velocidade que dá para fazer cada curva à frente (e frear a tempo)
-    let vAlvo = 47;
+    // carro mais rápido e com mais aderência: reta mais longa e curva mais forte
+    const F = c.ficha, M = c.mods || {}, kG = Math.sqrt(F.grip * (M.grip || 1)), kF = F.freio * (M.freio || 1);
+    let vAlvo = Math.max(30, (F.vmax + (M.vmax || 0)) * 0.96);
     for (const cv of r.curvas) {
       const d = cv.s - this.s;
-      if (d < -10 || d > 170) continue;
-      const vc = 9 + 15 * Math.max(0, 1 - Math.abs(cv.ang) / 1.9);
-      vAlvo = Math.min(vAlvo, Math.sqrt(vc * vc + 2 * 7 * Math.max(0, d - 6)));
+      if (d < -10 || d > 190) continue;
+      const vc = (9 + 15 * Math.max(0, 1 - Math.abs(cv.ang) / 1.9)) * kG;
+      vAlvo = Math.min(vAlvo, Math.sqrt(vc * vc + 2 * 7 * kF * Math.max(0, d - 6)));
     }
     if (this.est.distRota > 8) vAlvo = Math.min(vAlvo, 9);  // saiu da rota: volta com calma
     if (Math.abs(erro) > 0.9) vAlvo = Math.min(vAlvo, 8);
     // elástico: muito na frente alivia; atrás ganha um fôlego no motor
     const gap = this.s - sJogador;
-    if (gap > 70) vAlvo *= 0.86;
-    c.bonus = gap < -45 ? 1.5 : gap < -15 ? 0.7 : 0;
+    if (this.elastico) {
+      if (gap > 70) vAlvo *= 0.86;
+      c.bonus = gap < -45 ? 1.5 : gap < -15 ? 0.7 : 0;
+    } else c.bonus = gap < -60 ? 0.5 : 0;
     let acel = 0, freio = 0;
     if (v < vAlvo - 0.5) acel = 1;
     else if (v > vAlvo + 1.5) freio = lim((v - vAlvo) / 5, 0.25, 1);

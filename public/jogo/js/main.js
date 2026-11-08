@@ -13,6 +13,8 @@ import { Garagem } from './garagem.js';
 import { Rede, Transito } from './transito.js';
 import { Policia } from './policia.js';
 import { montarModelo, fichaDe } from './modelos.js';
+import { montarRota } from './rotas.js';
+import { Carreira, modsRival, CAPITULOS } from './carreira.js';
 
 const celular = matchMedia('(pointer: coarse)').matches;
 document.body.classList.toggle('toque', celular);
@@ -80,6 +82,7 @@ async function baixar(url, peso, base) {
 let mundo, carro, hud, racha, lockup, som, controles, rival, arrancada, garagem;
 let garagemAng = 0.9, arrastando = null, rede, transito, policia;
 let unoBase, carroId = 'uno';
+let rachas = {}, carreira, provaAtual = null;
 // rival no racha e na arrancada: um carro da mesma turma do seu (o desempenho dele é igualado em ajustarRival)
 const RIVAL_DE = { uno: 'uno', besouro: 'quadrado', quadrado: 'tufao', tufao: 'canecos', canecos: 'tufao', barao: 'bisao', bisao: 'bala', bala: 'bisao' };
 const modeloDe = (id, cor) => id === 'uno' ? { scene: unoBase.clone(true) } : montarModelo(id, cor);
@@ -109,6 +112,7 @@ async function iniciar() {
   controles = new Controles();
   hud = new Hud(mapa, mapa.lockup, mundo.lotes.concat(areasMarcos(mapa.lockup).slice(0, 2).map(p => ({ p }))));
   racha = new Racha(mapa.racha, scene, mundo);
+  rachas.principal = racha;
   rival = new Rival(gltfRival, scene, racha);
   arrancada = new Arrancada(racha, scene, THREE);
   rede = new Rede(mapa.ruas, mapa.raio);
@@ -117,6 +121,7 @@ async function iniciar() {
   policia.aoEnquadrar = enquadrado; policia.aoFugir = despistou;
   try { garagem.projeto = await (await fetch(comVersao('dados/projeto.json'))).json(); } catch (e) { console.warn('projeto.json', e); }
   garagem.aplicar(carro);
+  carreira = new Carreira();
   ajustarRival(); ajustarPolicia();
   mostrarGrana();
   som = new Som();
@@ -133,64 +138,127 @@ async function iniciar() {
 
 function ligarAcoes() {
   const menu = document.getElementById('menu'), fim = document.getElementById('fim');
-  const jogar = (tipo) => {
+  // tipo: livre | racha | relogio | arrancada | fuga; prova: prova da carreira (carreira.js) ou nada
+  const jogar = (tipo, prova = null) => {
+    provaAtual = prova;
     telaCheia();
     som.iniciar();
     menu.classList.remove('on'); fim.classList.remove('on');
     document.body.classList.add('jogando');
     carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
-    racha.parar(); arrancada.parar();
-    if (tipo === 'racha' || tipo === 'arrancada') prepararRival();
+    racha.parar(); arrancada.parar(); carro.avaria = 0;
+    if (tipo === 'racha' || tipo === 'arrancada') prepararRival(prova && prova.rival);
+    // rota do racha: a da Lock-Up ou uma da carreira
+    racha = prova && prova.rota && prova.rota !== 'principal' ? obterRacha(prova.rota) : rachas.principal;
+    rival.racha = racha;
     // trânsito e polícia: no rodar livre e nos rachas; a arrancada é com a pista fechada
     transito.ligar(tipo !== 'arrancada'); policia.ligar(tipo !== 'arrancada');
     const btRepetir = document.querySelector('#fim [data-acao]');
+    const premioCarreira = prova ? [0, 0] : undefined;      // a carreira paga o prêmio dela
     if (tipo === 'arrancada') {
-      modo = 'arrancada'; carro.avaria = 0;
+      modo = 'arrancada';
       arrancada.iniciar(carro, rival, hud, (r) => {
         modo = 'livre';
+        if (prova) return fimCarreira(prova, { venceu: r.ganhou, tempo: r.queimou ? null : parseFloat(String(r.tempo).replace(',', '.')),
+          titulo: r.queimou ? 'Queimou a largada' : null, linha: `${r.tempo} · ${r.rival}: ${r.tRival} · reação ${r.reacao}` });
         document.getElementById('fim-titulo').textContent = r.queimou ? 'Queimou a largada' : r.ganhou ? 'Você ganhou a arrancada!' : `${r.rival} ganhou a arrancada`;
         document.getElementById('fim-tempo').textContent = r.tempo;
         document.getElementById('fim-recorde').textContent = `Reação ${r.reacao} · ${r.kmh} km/h no fim · ${r.rival}: ${r.tRival}`;
         document.getElementById('fim-dist').textContent = r.novo ? 'Novo recorde nos 402 m neste aparelho!' : r.recorde ? `Seu recorde nos 402 m: ${r.recorde}` : '402 m na PA-160';
         document.getElementById('fim-grana').textContent = r.premio ? `+ R$ ${r.premio} pro caixa da garagem · caixa: R$ ${r.grana}` : '';
-        btRepetir.dataset.acao = 'arrancada'; btRepetir.textContent = r.ganhou ? 'Correr de novo' : 'Revanche';
+        botoesFim('arrancada', r.ganhou ? 'Correr de novo' : 'Revanche');
         mostrarGrana();
         document.getElementById('aviso').classList.remove('on');
         fim.classList.add('on');
-      });
+      }, { dist: prova ? prova.dist : 402, premio: premioCarreira });
       posicionarCamera(1, true);          // a largada fica longe da Lock-Up: a câmera já começa atrás do carro
       return;
     }
-    btRepetir.dataset.acao = 'racha';
     if (tipo === 'racha' || tipo === 'relogio') {
       modo = 'racha';
       const contra = tipo === 'racha';
-      if (contra) {
-        const L = lockup.largada;
-        carro.reset(L.jogador.x, L.jogador.z, L.jogador.ang);
-        rival.iniciar(L.rival.x, L.rival.z, L.rival.ang);
-      }
-      carro.nitro = 1; carro.avaria = 0;
+      const L = racha === rachas.principal ? lockup.largada : racha.largada();
+      if (contra || racha !== rachas.principal) carro.reset(L.jogador.x, L.jogador.z, L.jogador.ang);
+      if (contra) rival.iniciar(L.rival.x, L.rival.z, L.rival.ang);
+      carro.nitro = 1;
       racha.iniciar(hud, controles, (r) => {
         modo = 'livre';
+        if (prova) {
+          const venceu = contra ? r.posicao === 1 : r.segundos <= prova.meta;
+          return fimCarreira(prova, { venceu, tempo: r.segundos, linha: contra ? (r.posicao === 1 ? `Você ganhou de ${r.rival}` : `${r.rival} fez ${r.tRival}`) : `Meta: ${fmtT(prova.meta)}` });
+        }
         document.getElementById('fim-titulo').textContent = r.posicao === 1 ? 'Você ganhou!' : r.posicao === 2 ? `${r.rival} ganhou` : 'Chegada';
         document.getElementById('fim-tempo').textContent = r.tempo;
         document.getElementById('fim-recorde').textContent = r.posicao === 2 ? `${r.rival} fez ${r.tRival}` : r.novo ? 'Novo recorde neste aparelho!' : `Seu recorde: ${r.recorde}`;
         document.getElementById('fim-dist').textContent = `${(r.metros / 1000).toFixed(1).replace('.', ',')} km saindo da Lock-Up`;
         document.getElementById('fim-grana').textContent = r.premio ? `+ R$ ${r.premio} pro caixa da garagem · caixa: R$ ${r.grana}` : '';
-        document.querySelector('#fim [data-acao=racha]').textContent = r.posicao === 2 ? 'Revanche' : 'Correr de novo';
+        botoesFim(tipo, r.posicao === 2 ? 'Revanche' : 'Correr de novo');
         mostrarGrana();
         document.getElementById('aviso').classList.remove('on');
         fim.classList.add('on');
-      }, contra ? { rival } : {});
+      }, contra ? { rival, premio: premioCarreira } : { premio: premioCarreira });
+      posicionarCamera(1, true);
+    } else if (tipo === 'fuga') {
+      // fuga da carreira: a perseguição já começa, com uma viatura perto
+      modo = 'livre';
+      // começa na PA-160 (no pátio da oficina a viatura não acha caminho até você)
+      const q = arrancada.pose(-120, -1); carro.reset(q.x, q.z, q.ang);
+      // a viatura vem atrás, na mesma pista (do outro lado do canteiro ela levaria minutos para chegar)
+      const v0 = policia.v[0], qv = arrancada.pose(-185, 1);
+      v0.carro.reset(qv.x, qv.z, qv.ang); v0.carro.grupo.visible = true; v0.modo = 'ronda'; v0.cam = []; v0.iCam = 0; v0.preso = 0;
+      policia.comecar(carro);
+      policia.nivel = prova.nivel; policia.tPerseg = (prova.nivel - 1) * 25;
+      hud.aviso(`PROCURADO NÍVEL ${prova.nivel}! Despiste a polícia`, 3);
     } else {
       modo = 'livre'; racha.parar();
       hud.aviso('Saindo da Lock-Up Auto Center', 3);
     }
   };
+  // botões da tela de fim: repetir / rodar livre (ou carreira) / menu
+  const botoesFim = (acao, txt) => {
+    const [b1, b2] = document.querySelectorAll('#fim [data-acao]');
+    b1.dataset.acao = acao; b1.textContent = txt;
+    b2.dataset.acao = 'livre'; b2.textContent = 'Rodar livre';
+  };
+  // resultado de prova da carreira
+  const fimCarreira = (prova, r) => {
+    const res = carreira.concluir(prova, r);
+    provaAtual = prova;
+    som.sirene(0);
+    const prox = carreira.proxima;
+    document.getElementById('fim-titulo').textContent = r.titulo || (r.venceu ? (res.fechou ? (prova.id === 'c4c' ? 'REI DA PA-160!' : `${res.capitulo.nome}: dominada!`) : 'Prova vencida!') : 'Não foi dessa vez');
+    document.getElementById('fim-tempo').textContent = r.tempo ? fmtT(r.tempo) : prova.titulo;
+    document.getElementById('fim-recorde').textContent = r.linha || '';
+    document.getElementById('fim-dist').textContent = r.venceu && res.fechou && prox ? `Próximo capítulo liberado: ${CAPITULO_DE(prox)}` : prova.titulo;
+    document.getElementById('fim-grana').textContent = res.premio ? `+ R$ ${res.premio.toLocaleString('pt-BR')} · caixa: R$ ${res.grana.toLocaleString('pt-BR')}` : r.venceu ? '' : 'Dica: peças e carros novos na garagem ajudam';
+    const [b1, b2] = document.querySelectorAll('#fim [data-acao]');
+    if (r.venceu && prox) { b1.dataset.acao = 'proximaProva'; b1.textContent = `Próxima: ${prox.titulo}`; }
+    else { b1.dataset.acao = 'repetirProva'; b1.textContent = r.venceu ? 'Correr de novo' : 'Tentar de novo'; }
+    b2.dataset.acao = 'carreira'; b2.textContent = 'Carreira';
+    mostrarGrana();
+    document.getElementById('aviso').classList.remove('on');
+    fim.classList.add('on');
+  };
+  // enquadrado no meio de um racha da carreira: a prova acaba
+  falhouCarreira = (linha) => {
+    if (!provaAtual || !racha.ativo) return false;
+    const p = provaAtual; racha.parar(); modo = 'livre';
+    fimCarreira(p, { venceu: false, linha });
+    return true;
+  };
+  fugaCarreira = (venceu) => {
+    if (!provaAtual || provaAtual.tipo !== 'fuga') return false;
+    const p = provaAtual; modo = 'livre';
+    fimCarreira(p, { venceu, linha: venceu ? 'Sumiu do radar' : 'A viatura te fechou' });
+    return true;
+  };
   controles.acoes = {
     livre: () => jogar('livre'),
     racha: () => jogar('racha'),
+    carreira: () => abrirCarreira(),
+    correrProva: (p) => jogar(p.tipo, p),
+    repetirProva: () => provaAtual ? jogar(provaAtual.tipo, provaAtual) : abrirCarreira(),
+    proximaProva: () => { const p = carreira.proxima; p ? jogar(p.tipo, p) : abrirCarreira(); },
     relogio: () => jogar('relogio'),
     arrancada: () => jogar('arrancada'),
     garagem: () => abrirGaragem(),
@@ -205,6 +273,7 @@ function ligarAcoes() {
       }
     },
     menu: () => {
+      provaAtual = null;
       if (modo === 'menu') return;
       racha.parar(); arrancada.parar(); transito.ligar(false); policia.ligar(false); modo = 'menu'; som.pausar();
       document.body.classList.remove('jogando'); fim.classList.remove('on'); menu.classList.add('on');
@@ -227,12 +296,38 @@ function trocarCarro() {
   coletarVidros();
 }
 
-// o Zé pega um carro da mesma turma do seu, pintado de vermelho
-let rivalId = 'uno';
-function prepararRival() {
-  const id = RIVAL_DE[carroId] || 'uno';
+// o Zé pega um carro da mesma turma do seu, pintado de vermelho; na carreira o rival da prova vem com carro e preparação fixos
+let rivalId = 'uno', fugaCarreira = () => false, falhouCarreira = () => false;
+function prepararRival(def) {
+  const id = def ? def.carro : RIVAL_DE[carroId] || 'uno';
   if (id !== rivalId) { rivalId = id; rival.carro.trocarModelo(modeloDe(id, 0xff2a1f), { cor: 0xff2a1f, leve: true }); }
-  ajustarRival();
+  rival.nomear(def ? def.nome : 'ZÉ TURBO');
+  rival.elastico = !def;
+  if (def) rival.carro.mods = modsRival(def.p); else ajustarRival();
+}
+const fmtT = s => { const m = Math.floor(s / 60), r = s - m * 60; return `${m}:${r.toFixed(2).padStart(5, '0')}`.replace('.', ','); };
+const CAPITULO_DE = p => (CAPITULOS.find(c => c.provas.includes(p)) || { nome: p.titulo }).nome;
+
+// rotas da carreira: monta na primeira vez que precisa
+function obterRacha(id) {
+  if (!rachas[id]) rachas[id] = new Racha(montarRota(rede, id), scene, mundo);
+  return rachas[id];
+}
+
+function abrirCarreira() {
+  const menu = document.getElementById('menu');
+  racha.parar(); arrancada.parar(); transito.ligar(false); policia.ligar(false); som.sirene(0);
+  provaAtual = null;
+  modo = 'garagem'; menu.classList.remove('on'); document.getElementById('fim').classList.remove('on');
+  document.body.classList.remove('jogando'); document.body.classList.add('garagem');
+  carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
+  carreira.abrir(document.getElementById('carreira'), (prova) => {
+    carreira.fechar(); document.body.classList.remove('garagem');
+    controles.acoes.correrProva(prova);
+  }, () => {
+    carreira.fechar(); document.body.classList.remove('garagem');
+    modo = 'menu'; menu.classList.add('on'); mostrarGrana();
+  });
 }
 
 // o Zé também mexe no carro: chega perto do desempenho do seu (um pouco abaixo quanto mais preparado), seja qual for o carro dele
@@ -267,10 +362,12 @@ function abrirGaragem() {
 }
 
 function enquadrado(nivel) {
+  if (fugaCarreira(false)) return;
   let g = 0; try { g = parseInt(localStorage.getItem('racha-grana')) || 0; } catch {}
   const multa = Math.min(g, 100 * nivel);
   try { localStorage.setItem('racha-grana', String(g - multa)); } catch {}
   som.sirene(0);
+  if (falhouCarreira(multa ? `Enquadrado: multa de R$ ${multa}` : 'Enquadrado pela polícia')) { mostrarGrana(); return; }
   if (racha.ativo) racha.parar();
   carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang); carro.avaria = 0;
   modo = 'livre';
@@ -278,6 +375,7 @@ function enquadrado(nivel) {
   mostrarGrana();
 }
 function despistou(nivel) {
+  if (fugaCarreira(true)) return;
   let g = 0; try { g = parseInt(localStorage.getItem('racha-grana')) || 0; } catch {}
   const bonus = 60 * nivel;
   try { localStorage.setItem('racha-grana', String(g + bonus)); } catch {}
