@@ -382,8 +382,15 @@ export class Mundo {
             const terreno = vazio && !galpao && r.t !== 'service' && rnd() < 0.5;   // baldio murado
             if (vazio && !terreno) continue;
             if (pts.some(([x, z]) => Math.hypot(x, z) > this.raio - 20 || !livre(x, z) || !longeDasRuas(x, z))) continue;
-            const ctr = [(pts[0][0] + pts[2][0]) / 2, (pts[0][1] + pts[2][1]) / 2];
-            if (!longeDasRuas(...ctr)) continue;
+            // confere o lote inteiro numa grade de ~3,5 m: só os cantos e o meio deixavam passar
+            // uma rua estreita cortando o lote (aparecia galpão no meio da pista)
+            let cortaRua = false;
+            const nu = Math.ceil(frente / 3.5), nv = Math.ceil(fundo / 3.5);
+            for (let iu = 0; iu <= nu && !cortaRua; iu++) for (let iv = 0; iv <= nv && !cortaRua; iv++) {
+              const u = -frente / 2 + frente * iu / nu, v = recuo + fundo * iv / nv;
+              if (!longeDasRuas(cx + tx * u + nx * v, cz + tz * u + nz * v)) cortaRua = true;
+            }
+            if (cortaRua) continue;
             const bbLote = bb(pts);
             if (sobrepoe(bbLote)) continue;
             occ.add(bbLote, ...bbLote);

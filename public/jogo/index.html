@@ -7,6 +7,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Racha PBS">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icones/icone-192.png">
 <title>Racha Parauapebas · Modo Máquina</title>
 <meta name="description" content="Protótipo de jogo de racha no navegador, nas ruas de Parauapebas (PA), saindo da Lock-Up Auto Center.">
 <style>
@@ -14,7 +18,8 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
   html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; -webkit-text-size-adjust: 100%; background: var(--fundo); color: var(--texto);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; touch-action: none; position: fixed; inset: 0; width: 100%; user-select: none; -webkit-user-select: none; }
-  #tela canvas { display: block; position: fixed; inset: 0; }
+  /* o canvas sempre do tamanho da tela (o tamanho em pixels vem do JS); se passasse da tela, o Safari dava zoom ao girar o celular */
+  #tela canvas { display: block; position: fixed; inset: 0; width: 100% !important; height: 100% !important; }
   button { font: inherit; color: inherit; cursor: pointer; }
 
   #carregando { position: fixed; inset: 0; display: grid; place-content: center; text-align: center; background: var(--fundo); z-index: 30; transition: opacity .5s; padding: 16px; }
@@ -40,6 +45,9 @@
   .creditos { font-size: 11px; opacity: .45; margin-top: 10px; line-height: 1.5; }
   .creditos a { color: inherit; }
   body.toque .so-teclado { display: none; }
+  #dica-tela { display: none; margin: 14px 0 0; padding: 10px 12px; border-radius: 10px; background: #ffffff12; border-left: 4px solid var(--laranja); font-size: 13.5px; line-height: 1.45; text-align: left; }
+  body.ios:not(.app) #dica-tela { display: block; }
+  #dica-tela b { color: #ffb27f; }
   body:not(.toque) .so-toque { display: none; }
 
   /* HUD */
@@ -86,7 +94,9 @@
   body.toque #velo { right: auto; left: 50%; transform: translateX(-50%); bottom: 14px; text-align: center; }
   body.toque #vel { font-size: 38px; }
   body.toque #mini { bottom: auto; top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); width: 110px; height: 110px; }
-  body.toque #rua { top: auto; bottom: 82px; font-size: 14px; }
+  /* no celular o nome da rua fica embaixo do minimapa, para não cobrir o carro */
+  body.toque #rua { top: calc(max(12px, env(safe-area-inset-top)) + 120px); left: max(12px, env(safe-area-inset-left)); bottom: auto; transform: translateY(-8px); font-size: 13px; padding: 5px 10px; }
+  body.toque #rua.on { transform: translateY(0); }
   body.toque #painel-racha { top: max(10px, env(safe-area-inset-top)); }
   body.toque #tempo { font-size: 24px; }
   body.toque #cp { display: none; }
@@ -101,10 +111,21 @@
   #fim .num { font-size: 56px; font-weight: 900; font-style: italic; margin: 4px 0; font-variant-numeric: tabular-nums; }
 </style>
 <script type="importmap">
-{ "imports": {
+{
+ "imports": {
   "three": "./vendor/three/build/three.module.js",
-  "three/addons/": "./vendor/three/examples/jsm/"
-} }
+  "three/addons/": "./vendor/three/examples/jsm/",
+  "./js/carro.js": "./js/carro.js?v=3aa2402412",
+  "./js/construcoes.js": "./js/construcoes.js?v=3aa2402412",
+  "./js/controles.js": "./js/controles.js?v=3aa2402412",
+  "./js/hud.js": "./js/hud.js?v=3aa2402412",
+  "./js/lockup.js": "./js/lockup.js?v=3aa2402412",
+  "./js/main.js": "./js/main.js?v=3aa2402412",
+  "./js/marcos.js": "./js/marcos.js?v=3aa2402412",
+  "./js/mundo.js": "./js/mundo.js?v=3aa2402412",
+  "./js/racha.js": "./js/racha.js?v=3aa2402412"
+ }
+}
 </script>
 </head>
 <body>
@@ -125,6 +146,7 @@
     <button class="bt forte" data-acao="racha">Racha da Lock-Up<small>Contra o relógio, uns 1,8 km, boa parte pela PA-160</small></button>
     <button class="bt" data-acao="livre">Rodar livre<small>Explore o bairro sem cronômetro</small></button>
     <p class="ajuda so-teclado">W A S D ou setas · Espaço: freio de mão · C: câmera · R: voltar pra rua · M: som · Esc: menu</p>
+    <p id="dica-tela"><b>Tela cheia no iPhone:</b> o Safari não deixa o site ocupar a tela toda. Toque em Compartilhar <span aria-hidden="true">(□↑)</span> → <b>Adicionar à Tela de Início</b> e abra o jogo pelo ícone "Racha PBS": ele abre sem barras, deitado.</p>
     <p class="ajuda so-toque">Gire o celular na horizontal · ◀ ▶ para virar · botões da direita: acelerar, freio/ré e freio de mão</p>
     <p class="creditos">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores do OpenStreetMap</a> (ODbL) ·
       Uno: malha base de subishi e bancos de boitaloran no Sketchfab (CC BY 4.0), adaptados pelo Modo Máquina ·
@@ -170,6 +192,6 @@
   <div class="tq acel" data-toque="acel">ACELERA</div>
 </div>
 
-<script type="module" src="js/main.js"></script>
+<script type="module" src="js/main.js?v=3aa2402412"></script>
 </body>
 </html>

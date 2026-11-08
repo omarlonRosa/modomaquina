@@ -10,6 +10,14 @@ import { Racha } from './racha.js';
 
 const celular = matchMedia('(pointer: coarse)').matches;
 document.body.classList.toggle('toque', celular);
+// iPhone/iPad: o Safari não tem tela cheia para sites; aberto pelo ícone da Tela de Início ele vira app sem barras
+const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const comoApp = navigator.standalone === true || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
+document.body.classList.toggle('ios', ios);
+document.body.classList.toggle('app', comoApp);
+// versão dos arquivos (ferramentas/carimbar_versao.py põe ?v= no main.js); vai junto nos downloads
+const VERSAO = new URL(import.meta.url).searchParams.get('v') || '';
+const comVersao = (url) => VERSAO ? `${url}?v=${VERSAO}` : url;
 
 const carregando = document.getElementById('carregando');
 const barra = document.getElementById('barra');
@@ -19,7 +27,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: !celular, powerPreference:
 renderer.setPixelRatio(Math.min(devicePixelRatio, celular ? 1.5 : 2));
 // tamanho pela área da página e não pela janela visível: se o navegador der zoom, o jogo não encolhe
 const tamanho = () => [document.documentElement.clientWidth || innerWidth, document.documentElement.clientHeight || innerHeight];
-renderer.setSize(...tamanho());
+renderer.setSize(...tamanho(), false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.3;
@@ -65,13 +73,13 @@ async function baixar(url, peso, base) {
 
 let mundo, carro, hud, racha, lockup, som, controles;
 let modo = 'menu', camModo = 0, vidros = [];
-const CAMS = [{ d: 6.4, h: 2.3, olhar: 1.0 }, { d: 10, h: 4.2, olhar: 1.2 }, { d: -0.35, h: 1.12, olhar: 1.0, dentro: true }];
+const CAMS = [{ d: 5.4, h: 2.0, olhar: 1.0 }, { d: 9, h: 3.8, olhar: 1.2 }, { d: -0.35, h: 1.12, olhar: 1.0, dentro: true }];
 
 async function iniciar() {
   progresso(0.02, 'Baixando o mapa de Parauapebas…');
-  const mapa = JSON.parse(new TextDecoder().decode(await baixar('dados/mapa.json', 0.1, 0)));
+  const mapa = JSON.parse(new TextDecoder().decode(await baixar(comVersao('dados/mapa.json'), 0.1, 0)));
   progresso(0.1, 'Trazendo o Uno da garagem…');
-  const glb = await baixar('modelos/uno-hoje.glb', 0.75, 0.1);
+  const glb = await baixar(comVersao('modelos/uno-hoje.glb'), 0.75, 0.1);
   progresso(0.86, 'Montando a cidade…');
   await new Promise(r => setTimeout(r, 30));
   mundo = new Mundo(mapa, scene, { areaLivre: areaLivre(mapa.lockup), poucosPostes: celular, ocupados: areasMarcos(mapa.lockup) });
@@ -174,7 +182,9 @@ function posicionarCamera(dt, instantaneo) {
   }
   if (carro.choque > 0) camera.position.add(new THREE.Vector3((Math.random() - 0.5), (Math.random() - 0.5), (Math.random() - 0.5)).multiplyScalar(carro.choque * 0.25));
   camera.lookAt(olharSuave);
-  const fov = (c.dentro ? 70 : 60) + Math.min(14, carro.kmh / 12);
+  // tela larga (celular deitado) com o mesmo ângulo vertical deixava o carro miúdo: fecha o ângulo
+  const largura = Math.min(1, Math.max(0, (camera.aspect - 1.5) / 0.7));
+  const fov = (c.dentro ? 70 : 60) - largura * 10 + Math.min(12, carro.kmh / 14);
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * Math.min(1, dt * 3); camera.updateProjectionMatrix(); }
 }
 
@@ -202,7 +212,7 @@ function loop(t) {
 
 function redimensionar() {
   const [w, h] = tamanho();
-  renderer.setSize(w, h);
+  renderer.setSize(w, h, false);
   camera.aspect = w / h; camera.updateProjectionMatrix();
 }
 addEventListener('resize', redimensionar);
