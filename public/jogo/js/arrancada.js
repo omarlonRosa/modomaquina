@@ -93,6 +93,7 @@ export class Arrancada {
     this.ativo = true;
     this.linhas.forEach(m => (m.visible = true));
     rival.carro.grupo.visible = true;
+    if (rival.marca) rival.marca.visible = false;     // na faixa do lado a plaquinha fica enorme
     this.el.box.classList.add('on'); document.body.classList.add('arrancada');
     this.el.luzes.forEach(l => l.classList.remove('on'));
     this.el.info.textContent = 'Segure FREIO e ACELERA';
@@ -104,6 +105,7 @@ export class Arrancada {
     this.ativo = false;
     this.linhas.forEach(m => (m.visible = false));
     if (this.rival && !this.rival.ativo) this.rival.carro.grupo.visible = false;
+    if (this.rival && this.rival.marca) this.rival.marca.visible = true;
     this.el.box.classList.remove('on'); document.body.classList.remove('arrancada');
   }
 

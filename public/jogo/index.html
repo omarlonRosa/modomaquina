@@ -85,6 +85,15 @@
   .toques { display: none; }
   body.toque.jogando .toques { display: block; }
   .tq { position: fixed; z-index: 11; border-radius: 18px; border: 2px solid #ffffff38; background: #0b10207a; display: grid; place-items: center; font-weight: 800; font-size: 15px; touch-action: none; }
+  /* ícone grande e legenda bem pequena embaixo */
+  .tq { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #f4f2ee; }
+  .tq > span { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .tq svg { width: 38px; height: 38px; pointer-events: none; }
+  .tq.esq svg, .tq.dir svg { width: 42px; height: 42px; }
+  .tq.mao svg { width: 28px; height: 28px; }
+  .tq small { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity: .75; pointer-events: none; }
+  body.arrancada .tq.mao svg { width: 46px; height: 46px; }
+  .tq > .so-drag { display: none; } body.arrancada .tq > .so-drag { display: flex; } body.arrancada .tq > .so-normal { display: none; }
   .tq.ativo { background: #e8541ccc; border-color: #fff8; }
   .tq.esq { left: max(14px, env(safe-area-inset-left)); bottom: max(18px, env(safe-area-inset-bottom)); width: 96px; height: 96px; font-size: 32px; }
   .tq.dir { left: calc(max(14px, env(safe-area-inset-left)) + 108px); bottom: max(18px, env(safe-area-inset-bottom)); width: 96px; height: 96px; font-size: 32px; }
@@ -126,7 +135,7 @@
   /* arrancada */
   .bt.forte2 { background: #1f4fb0; }
   .so-drag { display: none; }
-  body.arrancada .so-drag { display: inline; } body.arrancada .so-normal { display: none; }
+  body.arrancada .so-drag { display: flex; } body.arrancada .so-normal { display: none; }
   body.arrancada .tq.esq, body.arrancada .tq.dir { display: none; }
   body.arrancada .tq.mao { left: max(14px, env(safe-area-inset-left)); right: auto; bottom: max(18px, env(safe-area-inset-bottom)); width: 190px; height: 104px; font-size: 18px; border-color: #ffd36a99; }
   #drag { left: 50%; top: max(12px, env(safe-area-inset-top)); transform: translateX(-50%); text-align: center; display: none; width: min(340px, 70vw); }
@@ -156,17 +165,17 @@
  "imports": {
   "three": "./vendor/three/build/three.module.js",
   "three/addons/": "./vendor/three/examples/jsm/",
-  "./js/arrancada.js": "./js/arrancada.js?v=14385dbfe7",
-  "./js/carro.js": "./js/carro.js?v=14385dbfe7",
-  "./js/construcoes.js": "./js/construcoes.js?v=14385dbfe7",
-  "./js/controles.js": "./js/controles.js?v=14385dbfe7",
-  "./js/hud.js": "./js/hud.js?v=14385dbfe7",
-  "./js/lockup.js": "./js/lockup.js?v=14385dbfe7",
-  "./js/main.js": "./js/main.js?v=14385dbfe7",
-  "./js/marcos.js": "./js/marcos.js?v=14385dbfe7",
-  "./js/mundo.js": "./js/mundo.js?v=14385dbfe7",
-  "./js/racha.js": "./js/racha.js?v=14385dbfe7",
-  "./js/rival.js": "./js/rival.js?v=14385dbfe7"
+  "./js/arrancada.js": "./js/arrancada.js?v=28f4bb25f4",
+  "./js/carro.js": "./js/carro.js?v=28f4bb25f4",
+  "./js/construcoes.js": "./js/construcoes.js?v=28f4bb25f4",
+  "./js/controles.js": "./js/controles.js?v=28f4bb25f4",
+  "./js/hud.js": "./js/hud.js?v=28f4bb25f4",
+  "./js/lockup.js": "./js/lockup.js?v=28f4bb25f4",
+  "./js/main.js": "./js/main.js?v=28f4bb25f4",
+  "./js/marcos.js": "./js/marcos.js?v=28f4bb25f4",
+  "./js/mundo.js": "./js/mundo.js?v=28f4bb25f4",
+  "./js/racha.js": "./js/racha.js?v=28f4bb25f4",
+  "./js/rival.js": "./js/rival.js?v=28f4bb25f4"
  }
 }
 </script>
@@ -239,14 +248,17 @@
 <div id="girar"><div><span>📱↻</span>Gire o celular na horizontal para dirigir</div></div>
 
 <div class="toques">
-  <div class="tq esq" data-toque="esq">◀</div>
-  <div class="tq dir" data-toque="dir">▶</div>
-  <div class="tq mao" data-toque="mao"><span class="so-normal">MÃO</span><span class="so-drag">MARCHA ▲</span></div>
-  <div class="tq freio" data-toque="freio">FREIO</div>
-  <div class="tq acel" data-toque="acel">ACELERA</div>
-  <div class="tq nitro" data-toque="nitro">NITRO</div>
+  <div class="tq esq" data-toque="esq"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M29 10 15 24l14 14"/></svg></div>
+  <div class="tq dir" data-toque="dir"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 10l14 14-14 14"/></svg></div>
+  <div class="tq mao" data-toque="mao">
+    <span class="so-normal"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="11"/><path d="M21 30V18h4.5a3.8 3.8 0 0 1 0 7.6H21"/><path d="M9 14a19 19 0 0 0 0 20M39 14a19 19 0 0 1 0 20"/></svg><small>mão</small></span>
+    <span class="so-drag"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="13" r="7"/><path d="M24 20v18M14 38h20"/><path d="M36 22l5-6 5 6" stroke-width="3"/></svg><small>marcha</small></span>
+  </div>
+  <div class="tq freio" data-toque="freio"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="14"/><circle cx="24" cy="24" r="4"/><path d="M33 9a18 18 0 0 1 7 9"/></svg><small>freio</small></div>
+  <div class="tq acel" data-toque="acel"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="15" y="7" width="18" height="30" rx="5"/><path d="M20 15h8M20 21h8M20 27h8M24 37v5"/></svg><small>acelera</small></div>
+  <div class="tq nitro" data-toque="nitro"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="13" y="16" width="14" height="24" rx="5"/><path d="M17 16v-4h6v4M20 8V5"/><path d="M33 34c4-3 6-7 4-12-1 3-3 4-4 4 1-4-1-7-3-9 0 5-4 7-4 11a5 5 0 0 0 7 6z" stroke-width="2.6"/></svg><small>nitro</small></div>
 </div>
 
-<script type="module" src="js/main.js?v=14385dbfe7"></script>
+<script type="module" src="js/main.js?v=28f4bb25f4"></script>
 </body>
 </html>
