@@ -1,6 +1,7 @@
 // Arrancada de 402 m na PA-160 (pista que sobe), você contra o rival, cada um numa faixa.
-// Largada de arrancada: segura FREIO + ACELERA (o motor fica no giro de largada) e solta o FREIO no verde.
-// Soltou antes do verde = queimou. Câmbio na mão: MARCHA (Espaço/E ou botão) — trocar com o
+// Largada: o carro fica travado na linha e a árvore de luzes corre sozinha. Segurando ACELERA o motor
+// fica no giro de largada e o carro sai sozinho no verde (largada perfeita); quem acelera só depois
+// do verde perde o tempo de reação. Câmbio na mão: MARCHA (Espaço/E ou botão) — trocar com o
 // ponteiro no verde do conta-giros dá um empurrão. Nitro quando quiser (um cilindro).
 // A física aqui é em linha (1D) sobre a reta, para a disputa ser de largada, troca e nitro.
 const DIST = 402;
@@ -87,17 +88,18 @@ export class Arrancada {
     this.carro = carro; this.rival = rival; this.hud = hud; this.fim = aoTerminar;
     this.eu = piloto(carro.mods); this.ele = piloto(rival.carro.mods);
     this.eu.nitro = 1; this.ele.nitro = 1;
-    this.fase = 'pre';           // pre (segurar freio) → arvore → corrida → acabou
+    this.fase = 'pre';           // pre (preparar, ~1 s) → arvore (sozinha) → corrida → acabou
     this.t = 0; this.tVerde = null; this.freioAntes = false; this.trocaAntes = false; this.tAcabou = 0;
     // rival: reação e jeito de trocar sorteados (às vezes ele erra a troca e perde tempo)
-    this.ia = { reacao: 0.17 + Math.random() * 0.17, trocaEm: () => Math.random() < 0.18 ? 5350 + Math.random() * 300 : 6150 + Math.random() * 800, nitroNa: Math.random() < 0.7 ? 2 : 3 };
+    this.ia = { reacao: 0.2 + Math.random() * 0.2, trocaEm: () => Math.random() < 0.18 ? 5350 + Math.random() * 300 : 6150 + Math.random() * 800, nitroNa: Math.random() < 0.7 ? 2 : 3 };
     this.ativo = true;
     this.linhas.forEach(m => (m.visible = true));
     rival.carro.grupo.visible = true;
     if (rival.marca) rival.marca.visible = false;     // na faixa do lado a plaquinha fica enorme
     this.el.box.classList.add('on'); document.body.classList.add('arrancada');
     this.el.luzes.forEach(l => l.classList.remove('on'));
-    this.el.info.textContent = 'Segure FREIO e ACELERA';
+    this.el.info.textContent = 'Segure ACELERA: sai no verde';
+    this.avisouAcel = false;
     this.posicionar(0);
   }
 
@@ -127,26 +129,22 @@ export class Arrancada {
     const freio = (inp.freio || 0) > 0.5, acel = inp.acel || 0, troca = !!inp.mao;
     this.t += dt;
     if (this.fase === 'pre') {
-      if (freio) { this.fase = 'arvore'; this.tArvore = 0; this.atraso = 0.6 + Math.random() * 0.5; this.el.info.textContent = 'Solte o FREIO no verde!'; }
+      if (this.t > 1.1) { this.fase = 'arvore'; this.tArvore = 0; this.atraso = 0.2 + Math.random() * 0.5; }
     } else if (this.fase === 'arvore') {
       this.tArvore += dt;
       const k = Math.floor((this.tArvore - this.atraso) / 0.5);           // 3 amarelas, meio segundo cada, depois verde
       this.el.luzes.forEach((l, i) => l.classList.toggle('on', i < 3 ? k >= i : k >= 3));
       if (k >= 3 && this.tVerde === null) { this.tVerde = this.t; this.fase = 'corrida'; this.el.info.textContent = ''; }
-      if (!freio && this.tVerde === null) {                                // soltou antes do verde
-        eu.queimou = true; eu.largou = true; eu.reacao = -1; this.tVerde = this.t + 0.4; this.fase = 'corrida';
-        this.el.luzes.forEach(l => l.classList.add('vermelho'));
-        this.hud.aviso('QUEIMOU A LARGADA!', 1.6);
-      }
     }
     if (this.fase === 'corrida' || this.fase === 'acabou') {
       const tv = this.t - this.tVerde;
-      // você: larga quando soltar o freio; sem acelerar na hora, o carro "morre" um pouco
-      if (!eu.largou && !freio) {
-        eu.largou = true; eu.reacao = tv;
-        if (eu.rpm < 3000) { eu.patina = 0.9; this.hud.aviso('Largou sem acelerar!', 0.9); }   // motor baixo: afoga
-        else if (tv < 0.12) { this.hud.aviso('REAÇÃO PERFEITA!', 1); eu.boost = 0.5; }
+      // você: segurando ACELERA no verde o carro sai na hora; senão sai quando acelerar
+      if (!eu.largou && acel > 0.3) {
+        eu.largou = true; eu.reacao = Math.max(0.02, tv);
+        if (tv < 0.05) { this.hud.aviso('LARGADA PERFEITA!', 1); eu.boost = 0.5; }
+        else if (tv < 0.2) this.hud.aviso('Boa reação!', 0.8);
       }
+      if (!eu.largou && tv > 0.6 && !this.avisouAcel) { this.avisouAcel = true; this.hud.aviso('ACELERA!', 1); }
       if (!ele.largou && tv >= this.ia.reacao) { ele.largou = true; ele.reacao = this.ia.reacao; if (Math.random() < 0.2) ele.patina = 0.5; }
       // troca de marcha (borda do botão)
       if (troca && !this.trocaAntes) {
