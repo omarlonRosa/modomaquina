@@ -91,6 +91,8 @@ export class Carro {
   }
 
   update(dt, inp, mundo) {
+    // comando faltando vale zero (senão vira NaN e o carro some)
+    if (inp.acel === undefined || inp.freio === undefined || inp.dir === undefined) inp = { acel: 0, freio: 0, dir: 0, mao: false, ...inp };
     const f = new THREE.Vector2(Math.sin(this.ang), Math.cos(this.ang));
     const e = new THREE.Vector2(Math.cos(this.ang), -Math.sin(this.ang));   // esquerda
     let vf = this.vel.dot(f), vl = this.vel.dot(e);
@@ -278,6 +280,20 @@ export class Som {
     if (ligado && !this.nitroLigado) { this.gNitro.gain.cancelScheduledValues(t); this.gNitro.gain.setValueAtTime(0.32, t); this.gNitro.gain.setTargetAtTime(0.13, t + 0.05, 0.2); }
     if (!ligado && this.nitroLigado) this.gNitro.gain.setTargetAtTime(0, t, 0.12);
     this.nitroLigado = ligado;
+  }
+  // sirene da polícia: tom que sobe e desce (dois tons alternados), volume pela distância
+  sirene(intensidade) {
+    if (!this.ok) return;
+    if (!this.gSir) {
+      const o = this.ctx.createOscillator(); o.type = 'square';
+      const lfo = this.ctx.createOscillator(); lfo.frequency.value = 0.9;
+      const prof = this.ctx.createGain(); prof.gain.value = 260; lfo.connect(prof); prof.connect(o.frequency);
+      o.frequency.value = 900;
+      const bp = this.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 1.2;
+      this.gSir = this.ctx.createGain(); this.gSir.gain.value = 0;
+      o.connect(bp); bp.connect(this.gSir); this.gSir.connect(this.master); o.start(); lfo.start();
+    }
+    this.gSir.gain.setTargetAtTime(Math.max(0, Math.min(1, intensidade)) * 0.09, this.ctx.currentTime, 0.15);
   }
   batida(forca) {
     if (!this.ok || this.mudo) return;

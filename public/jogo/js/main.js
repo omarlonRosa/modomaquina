@@ -10,6 +10,8 @@ import { Racha } from './racha.js';
 import { Rival, colisaoCarros } from './rival.js';
 import { Arrancada } from './arrancada.js';
 import { Garagem } from './garagem.js';
+import { Rede, Transito } from './transito.js';
+import { Policia } from './policia.js';
 
 const celular = matchMedia('(pointer: coarse)').matches;
 document.body.classList.toggle('toque', celular);
@@ -75,7 +77,7 @@ async function baixar(url, peso, base) {
 }
 
 let mundo, carro, hud, racha, lockup, som, controles, rival, arrancada, garagem;
-let garagemAng = 0.9, arrastando = null;
+let garagemAng = 0.9, arrastando = null, rede, transito, policia;
 let modo = 'menu', camModo = 0, vidros = [];
 const CAMS = [{ d: 5.4, h: 2.0, olhar: 1.0 }, { d: 9, h: 3.8, olhar: 1.2 }, { d: -0.35, h: 1.12, olhar: 1.0, dentro: true }];
 
@@ -93,6 +95,7 @@ async function iniciar() {
   const loader = new GLTFLoader().register(parser => { parser.textureLoader = new THREE.TextureLoader(parser.options.manager); return { name: 'texturas_por_img' }; });
   const gltf = await loader.parseAsync(glb, '');
   const gltfRival = { scene: gltf.scene.clone(true) };        // cópia antes do Carro mexer na hierarquia
+  const gltfPolicia = [{ scene: gltf.scene.clone(true) }, { scene: gltf.scene.clone(true) }];
   carro = new Carro(gltf, scene);
   // vidros: o insulfilm do modelo (quase preto) deixa a visão do motorista toda escura; por dentro ficam claros
   vidros = [];
@@ -103,6 +106,10 @@ async function iniciar() {
   racha = new Racha(mapa.racha, scene, mundo);
   rival = new Rival(gltfRival, scene, racha);
   arrancada = new Arrancada(racha, scene, THREE);
+  rede = new Rede(mapa.ruas, mapa.raio);
+  transito = new Transito(scene, rede, mundo, { max: celular ? 11 : 20 });
+  policia = new Policia(gltfPolicia, scene, rede, mundo);
+  policia.aoEnquadrar = enquadrado; policia.aoFugir = despistou;
   garagem = new Garagem();
   try { garagem.projeto = await (await fetch(comVersao('dados/projeto.json'))).json(); } catch (e) { console.warn('projeto.json', e); }
   garagem.aplicar(carro);
@@ -129,6 +136,8 @@ function ligarAcoes() {
     document.body.classList.add('jogando');
     carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
     racha.parar(); arrancada.parar();
+    // trânsito e polícia: no rodar livre e nos rachas; a arrancada é com a pista fechada
+    transito.ligar(tipo !== 'arrancada'); policia.ligar(tipo !== 'arrancada');
     const btRepetir = document.querySelector('#fim [data-acao]');
     if (tipo === 'arrancada') {
       modo = 'arrancada'; carro.avaria = 0;
@@ -192,7 +201,7 @@ function ligarAcoes() {
     },
     menu: () => {
       if (modo === 'menu') return;
-      racha.parar(); arrancada.parar(); modo = 'menu'; som.pausar();
+      racha.parar(); arrancada.parar(); transito.ligar(false); policia.ligar(false); modo = 'menu'; som.pausar();
       document.body.classList.remove('jogando'); fim.classList.remove('on'); menu.classList.add('on');
     },
     primeiroToque: () => { if (modo !== 'menu') som.iniciar(); },   // no menu fica quieto; o clique de jogar já liga o som
@@ -207,7 +216,7 @@ function ajustarRival() {
 
 function abrirGaragem() {
   const menu = document.getElementById('menu');
-  racha.parar(); arrancada.parar();
+  racha.parar(); arrancada.parar(); transito.ligar(false); policia.ligar(false);
   modo = 'garagem'; menu.classList.remove('on'); document.getElementById('fim').classList.remove('on');
   document.body.classList.remove('jogando'); document.body.classList.add('garagem');
   carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
@@ -215,6 +224,26 @@ function abrirGaragem() {
     garagem.fechar(); document.body.classList.remove('garagem');
     modo = 'menu'; menu.classList.add('on'); mostrarGrana();
   });
+}
+
+function enquadrado(nivel) {
+  let g = 0; try { g = parseInt(localStorage.getItem('racha-grana')) || 0; } catch {}
+  const multa = Math.min(g, 100 * nivel);
+  try { localStorage.setItem('racha-grana', String(g - multa)); } catch {}
+  som.sirene(0);
+  if (racha.ativo) racha.parar();
+  carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang); carro.avaria = 0;
+  modo = 'livre';
+  hud.aviso(multa ? `ENQUADRADO! Multa de R$ ${multa}` : 'ENQUADRADO! Liberado com advertência', 3);
+  mostrarGrana();
+}
+function despistou(nivel) {
+  let g = 0; try { g = parseInt(localStorage.getItem('racha-grana')) || 0; } catch {}
+  const bonus = 60 * nivel;
+  try { localStorage.setItem('racha-grana', String(g + bonus)); } catch {}
+  som.sirene(0);
+  hud.aviso(`DESPISTOU! +R$ ${bonus}`, 2.5);
+  mostrarGrana();
 }
 
 function mostrarGrana() {
@@ -284,11 +313,21 @@ function loop(t) {
   } else if (modo !== 'menu' && modo !== 'garagem') {
     acc += dt;
     const rInp = rival.ativo ? rival.pensar(dt, racha.sJogador || 0, racha.largando) : null;
+    policia.pensar(dt, carro, { racha: racha.ativo && !racha.largando, hud });
+    const viaturas = policia.v.filter(p => p.modo !== 'fora');
+    transito.update(dt, [carro, rival.ativo ? rival.carro : null, ...viaturas.map(p => p.carro)]);
     while (acc >= PASSO) {
       carro.update(PASSO, inp, mundo);
-      if (rInp) { rival.carro.update(PASSO, rInp, mundo); colisaoCarros(carro, rival.carro); }
+      if (rInp) { rival.carro.update(PASSO, rInp, mundo); colisaoCarros(carro, rival.carro); if (transito.ativo) transito.colidir(rival.carro); }
+      for (const p of viaturas) {
+        p.carro.update(PASSO, p.inp, mundo);
+        if (colisaoCarros(carro, p.carro) > 0.2) policia.infracao('bateuPolicia');
+        if (transito.ativo) transito.colidir(p.carro);
+      }
+      if (transito.ativo) { const b = transito.colidir(carro); if (b) policia.infracao('bateuTransito'); }
       acc -= PASSO;
     }
+    if (policia.perseguindo) { const d = policia.dmin || 999; som.sirene(1 - d / 160); } else som.sirene(0);
     if (carro.nitroAtivo !== nitroAntes) { nitroAntes = carro.nitroAtivo; document.body.classList.toggle('nitro', nitroAntes); }
     if (carro.evento === 'canteiro') {
       hud.aviso(carro.avaria >= 2 ? 'Foi a junta homocinética! (R conserta)' : 'Pancada no canteiro! Suspensão avariada', 2.6);
@@ -298,6 +337,7 @@ function loop(t) {
     choqueAntes = carro.choque;
     racha.camDentro = !!CAMS[camModo].dentro;
     racha.update(dt, carro, inp);
+    hud.policia = policia.ativo ? viaturas.map(p => p.carro.pos) : null;
     hud.update(dt, carro, racha.ativo ? racha.infoMapa() : null);
     som.update(carro, inp.acel);
   } else carro.atualizarModelo(dt);   // menu e garagem: carro parado
@@ -342,7 +382,7 @@ function telaCheia() {
 document.addEventListener('visibilitychange', () => { if (document.hidden && som) som.pausar(); else if (som && modo !== 'menu') som.iniciar(); });
 
 iniciar().catch(e => { console.error(e); progresso(0, 'Não deu para carregar: ' + e.message); });
-window._jogo = () => ({ carro, mundo, camera, scene, renderer, racha, controles, rival, arrancada, garagem });
+window._jogo = () => ({ carro, mundo, camera, scene, renderer, racha, controles, rival, arrancada, garagem, transito, policia, rede });
 // teste sem a aba visível: simula N segundos com uma entrada fixa e desenha um quadro
 window._simular = (seg, inp = {}) => {
   const e = { acel: 0, freio: 0, dir: 0, mao: false, ...inp };

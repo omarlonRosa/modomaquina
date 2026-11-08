@@ -72,6 +72,10 @@ export class Hud {
       const p = rota.pontos[rota.prox];
       if (p) { const [x, z] = this.P(...p); g.fillStyle = '#fff'; g.strokeStyle = '#ffa21f'; g.lineWidth = 2.5; g.beginPath(); g.arc(x - cx, z - cz, 5, 0, 7); g.fill(); g.stroke(); }
     }
+    if (this.policia) {     // viaturas: pisca vermelho e azul
+      const fase = Math.floor(performance.now() / 200) % 2;
+      for (const q of this.policia) { const [x, z] = this.P(q.x, q.z); g.fillStyle = fase ? '#ff2a2a' : '#2a5aff'; g.beginPath(); g.arc(x - cx, z - cz, 6, 0, 7); g.fill(); }
+    }
     g.restore();
     // carro no centro
     g.fillStyle = '#ffffff'; g.strokeStyle = '#e8541c'; g.lineWidth = 2 * k / 2;
