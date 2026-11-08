@@ -63,7 +63,7 @@ async function baixar(url, peso, base) {
 }
 
 let mundo, carro, hud, racha, lockup, som, controles;
-let modo = 'menu', camModo = 0;
+let modo = 'menu', camModo = 0, vidros = [];
 const CAMS = [{ d: 6.4, h: 2.3, olhar: 1.0 }, { d: 10, h: 4.2, olhar: 1.2 }, { d: -0.35, h: 1.12, olhar: 1.0, dentro: true }];
 
 async function iniciar() {
@@ -79,6 +79,10 @@ async function iniciar() {
   const loader = new GLTFLoader().register(parser => { parser.textureLoader = new THREE.TextureLoader(parser.options.manager); return { name: 'texturas_por_img' }; });
   const gltf = await loader.parseAsync(glb, '');
   carro = new Carro(gltf, scene);
+  // vidros: o insulfilm do modelo (quase preto) deixa a visão do motorista toda escura; por dentro ficam claros
+  vidros = [];
+  carro.grupo.traverse(o => { if (o.isMesh && o.material && o.material.name === 'glass') vidros.push(o.material); });
+  for (const m of vidros) m.userData.opacidade = m.opacity;
   controles = new Controles();
   hud = new Hud(mapa, mapa.lockup, mundo.lotes);
   racha = new Racha(mapa.racha, scene, mundo);
@@ -140,6 +144,8 @@ function ligarAcoes() {
 const alvoCam = new THREE.Vector3(), olharCam = new THREE.Vector3(), olharSuave = new THREE.Vector3();
 function posicionarCamera(dt, instantaneo) {
   const c = CAMS[camModo];
+  const porDentro = !!c.dentro && modo !== 'menu';
+  for (const m of vidros) m.opacity = porDentro ? 0.12 : m.userData.opacidade;
   const f = new THREE.Vector3(Math.sin(carro.ang), 0, Math.cos(carro.ang));
   if (modo === 'menu') {
     // giro lento em volta do carro, mostrando a fachada da Lock-Up

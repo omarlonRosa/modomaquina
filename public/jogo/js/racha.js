@@ -214,12 +214,11 @@ export class Racha {
     this.setaGiro.rotation.y = this.setaAng;
     const fx = Math.sin(carro.ang), fz = Math.cos(carro.ang);
     const dentro = this.camDentro;
-    // à frente do carro e abaixo da altura da câmera, para ver a seta por cima (aparece logo acima do teto)
-    this.seta.position.set(carro.pos.x + fx * (dentro ? 7 : 4.2), (carro.pos.y || 0) + (dentro ? 1.6 : 1.95), carro.pos.z + fz * (dentro ? 7 : 4.2));
+    // uns 6 m à frente do carro e abaixo da altura da câmera: aparece pequena, acima do teto, sem tapar o carro
+    this.seta.position.set(carro.pos.x + fx * (dentro ? 9 : 6.5), (carro.pos.y || 0) + (dentro ? 1.3 : 1.85), carro.pos.z + fz * (dentro ? 9 : 6.5));
     this.seta.rotation.y = carro.ang;
-    this.setaInclina.rotation.x = dentro ? -0.35 : -0.55;
-    const pulso = 1 + Math.sin(performance.now() / 160) * 0.04;
-    this.setaGiro.scale.setScalar(pulso * (dentro ? 0.9 : 1.3));
+    this.setaInclina.rotation.x = dentro ? -0.4 : -0.7;
+    this.setaGiro.scale.setScalar(dentro ? 0.45 : 1.0);
 
     // faixa no chão: some o que já passou e as setas andam
     this.faixa.geometry.setDrawRange((Math.floor(this.iRota) + 1) * 6, Infinity);

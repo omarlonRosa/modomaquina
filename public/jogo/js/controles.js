@@ -90,7 +90,8 @@ export class Controles {
     const freio = (t.has('KeyS') || t.has('ArrowDown') || q.freio) ? 1 : 0;
     const dir = ((t.has('KeyA') || t.has('ArrowLeft') || q.esq) ? 1 : 0) - ((t.has('KeyD') || t.has('ArrowRight') || q.dir) ? 1 : 0);
     const mao = t.has('Space') || q.mao;
-    if (this.travado) { this.v = 0; this.a = 0; this.f = 1; return { acel: 0, freio: 1, dir: 0, mao: false }; }
+    // travado (contagem da largada): segura no freio de mão. Freio comum com o carro parado vira ré!
+    if (this.travado) { this.v = 0; this.a = 0; this.f = 0; return { acel: 0, freio: 0, dir: 0, mao: true }; }
 
     // volante: vai girando (uns 0,35 s até o fim parado, ~0,8 s a 120 km/h) e volta ao centro mais rápido
     const calma = 1 + Math.abs(kmh) / 90;
