@@ -798,5 +798,25 @@
         "texto": "Resultado, punições e o que esperar da largada (hoje, 14h): https://modomaquina.com.br/artigos/gp-sao-paulo-2026-classificacao-norris-pole-camara-bortoleto"
       }
     ]
+  },
+  {
+    "id": "2026-11-08-gp-sp-corrida",
+    "publicar_em": "2026-11-08T16:25:00-03:00",
+    "posts": [
+      {
+        "texto": "Norris vence o GP de São Paulo! 🏁\n\nVerstappen saiu de 21º pra 2º, Hadjar completou o pódio e, com Russell 4º e Antonelli 5º, a Mercedes fechou o título de construtores.\n\n🇧🇷 Bortoleto 16º\n🇧🇷 Câmara 20º na estreia, depois de escapar na 1ª volta\n\nO Câmara merece outra chance?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/gp-sp-corrida/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-sp-corrida/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-sp-corrida/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-sp-corrida/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-sp-corrida/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-sp-corrida/6.jpg"
+        ]
+      },
+      {
+        "texto": "Resultado, como a corrida virou e o título da Mercedes: https://modomaquina.com.br/artigos/gp-sao-paulo-2026-corrida-norris-vence-verstappen-segundo-mercedes-campea-construtores"
+      }
+    ]
   }
 ]
