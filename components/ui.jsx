@@ -12,7 +12,11 @@ export function Header() {
             <Link key={e.slug} href={`/editoria/${e.slug}`}>{e.name}</Link>
           ))}
         </nav>
-        <a className="btn" href={SITE.instagram} target="_blank" rel="noopener">Seguir</a>
+        <div className="acoes">
+          {/* o jogo é uma página estática à parte (public/jogo), por isso <a> e não <Link> */}
+          <a className="btn ghost" href="/jogo/" title="Racha Parauapebas: jogo de racha no navegador">▶ Jogo</a>
+          <a className="btn" href={SITE.instagram} target="_blank" rel="noopener">Seguir</a>
+        </div>
       </div>
     </header>
   );
@@ -43,6 +47,7 @@ export function Footer() {
             <h5>Modo Máquina</h5>
             <ul>
               <li><Link href="/sobre">Sobre</Link></li>
+              <li><a href="/jogo/">Jogo: Racha Parauapebas</a></li>
               <li><Link href="/anuncie">Anuncie</Link></li>
               <li><Link href="/contato">Contato</Link></li>
               <li><Link href="/privacidade">Privacidade</Link></li>
