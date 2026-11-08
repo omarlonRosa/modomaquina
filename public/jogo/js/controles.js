@@ -11,6 +11,7 @@ export class Controles {
     this.acoes = {};
     this.v = 0; this.a = 0; this.f = 0;   // volante (-1..1), acelerador e freio (0..1) já suavizados
     addEventListener('keydown', e => {
+      if (e.target && e.target.closest && e.target.closest('input, textarea')) return;   // digitando o apelido
       if (e.repeat) { if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault(); return; }
       this.teclas.add(e.code);
       const a = { KeyC: 'camera', KeyR: 'reset', KeyM: 'som', Escape: 'menu', KeyP: 'menu' }[e.code];
@@ -96,21 +97,21 @@ export class Controles {
     // travado (contagem da largada): o carro fica parado, mas dá para acelerar o motor (largada perfeita)
     if (this.travado) { this.v = 0; this.f = 0; this.a = chegar(this.a, acel, (acel ? 4 : 8) * dt); return { acel: this.a, freio: 0, dir: 0, mao: false, nitro: false, parado: true }; }
 
-    // volante: vai girando (uns 0,35 s até o fim parado, ~0,8 s a 120 km/h) e volta ao centro mais rápido
-    // no toque é ainda mais manso (~0,6 s até o fim parado, ~1,3 s a 120 km/h): o polegar não dosa como a tecla
+    // volante: rápido o bastante para desviar (o usuário achou lento e batia muito): ~0,2 s até o fim parado
+    // no teclado, ~0,3 s no toque; em alta fica um pouco mais calmo (o esterço máximo já cai com a velocidade)
     const toque = (q.esq || q.dir) && !(t.has('KeyA') || t.has('KeyD') || t.has('ArrowLeft') || t.has('ArrowRight'));
-    const calma = 1 + Math.abs(kmh) / 90;
+    const calma = 1 + Math.abs(kmh) / 160;
     let taxa;
-    if (dir === 0) taxa = toque ? 3.6 : 4.5;
-    else if (Math.sign(dir) !== Math.sign(this.v) && Math.abs(this.v) > 0.05) taxa = toque ? 4 : 6;   // trocando de lado
-    else taxa = (toque ? 1.7 : 2.9) / calma;
+    if (dir === 0) taxa = toque ? 6 : 7;
+    else if (Math.sign(dir) !== Math.sign(this.v) && Math.abs(this.v) > 0.05) taxa = toque ? 7 : 9;   // trocando de lado
+    else taxa = (toque ? 5 : 7) / calma;
     this.v = chegar(this.v, dir, taxa * dt);
     // acelerador sobe em ~0,25 s e alivia rápido; freio entra em ~0,15 s
     this.a = chegar(this.a, acel, (acel ? 4 : 8) * dt);
     this.f = chegar(this.f, freio, (freio ? 7 : 10) * dt);
     // curva suave: pouco volante perto do centro, total no fim
-    let v = Math.sign(this.v) * Math.pow(Math.abs(this.v), toque ? 1.7 : 1.4);
-    if (toque) v *= 1 - Math.min(0.3, Math.abs(kmh) / 330);     // em alta, no toque, não chega a esterçar tudo
+    let v = Math.sign(this.v) * Math.pow(Math.abs(this.v), toque ? 1.25 : 1.2);
+    if (toque) v *= 1 - Math.min(0.22, Math.abs(kmh) / 450);     // em alta, no toque, não chega a esterçar tudo
     return { acel: this.a, freio: this.f, dir: v, mao, nitro, analogico: true };
   }
 }

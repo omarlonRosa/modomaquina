@@ -76,6 +76,9 @@ export class Hud {
       const fase = Math.floor(performance.now() / 200) % 2;
       for (const q of this.policia) { const [x, z] = this.P(q.x, q.z); g.fillStyle = fase ? '#ff2a2a' : '#2a5aff'; g.beginPath(); g.arc(x - cx, z - cz, 6, 0, 7); g.fill(); }
     }
+    if (this.amigos) {      // jogadores online: azul
+      for (const q of this.amigos) { const [x, z] = this.P(q.x, q.z); g.fillStyle = '#2f9bff'; g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(x - cx, z - cz, 6, 0, 7); g.fill(); g.stroke(); }
+    }
     g.restore();
     // carro no centro
     g.fillStyle = '#ffffff'; g.strokeStyle = '#e8541c'; g.lineWidth = 2 * k / 2;

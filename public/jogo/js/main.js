@@ -9,7 +9,8 @@ import { Hud } from './hud.js';
 import { Racha } from './racha.js';
 import { Rival, colisaoCarros } from './rival.js';
 import { Arrancada } from './arrancada.js';
-import { Garagem } from './garagem.js';
+import { Garagem, VISUAL } from './garagem.js';
+import { Online } from './online.js';
 import { Rede, Transito } from './transito.js';
 import { Policia } from './policia.js';
 import { montarModelo, fichaDe } from './modelos.js';
@@ -83,6 +84,7 @@ let mundo, carro, hud, racha, lockup, som, controles, rival, arrancada, garagem;
 let garagemAng = 0.9, arrastando = null, rede, transito, policia;
 let unoBase, carroId = 'uno';
 let rachas = {}, carreira, provaAtual = null;
+let online, esperaOnline = null, rachaOnline = null, chegadasOnline = [];
 // rival no racha e na arrancada: um carro da mesma turma do seu (o desempenho dele é igualado em ajustarRival)
 const RIVAL_DE = { uno: 'uno', besouro: 'quadrado', quadrado: 'tufao', tufao: 'canecos', canecos: 'tufao', barao: 'bisao', bisao: 'bala', bala: 'bisao' };
 const modeloDe = (id, cor) => id === 'uno' ? { scene: unoBase.clone(true) } : montarModelo(id, cor);
@@ -96,6 +98,14 @@ async function iniciar() {
   const glb = await baixar(comVersao('modelos/uno-hoje.glb'), 0.75, 0.1);
   progresso(0.86, 'Montando a cidade…');
   await new Promise(r => setTimeout(r, 30));
+  // ruas mais largas que no mapa (o usuário achou estreitas e o carro batia muito): as de mão dupla
+  // ganham mais (uma faixa por sentido ficava apertada); as pistas de mão única só um pouco, para não
+  // comer o canteiro; a Rua Aparaí fica quase igual (a oficina e o hotel estão encostados nela)
+  for (const r of mapa.ruas) {
+    if (r.n === 'Rua Aparaí') r.w = Math.max(r.w, 8);
+    else if (r.mao) r.w = Math.round(r.w * 1.12 * 10) / 10;
+    else if (r.t !== 'track') r.w = Math.round((r.w * 1.3 + 1) * 10) / 10;
+  }
   mundo = new Mundo(mapa, scene, { areaLivre: areaLivre(mapa.lockup), poucosPostes: celular, ocupados: areasMarcos(mapa.lockup) });
   lockup = criarLockup(mapa.lockup, mundo, scene);
   criarMarcos(mapa.lockup, mundo, scene);
@@ -114,6 +124,7 @@ async function iniciar() {
   racha = new Racha(mapa.racha, scene, mundo);
   rachas.principal = racha;
   rival = new Rival(gltfRival, scene, racha);
+  online = new Online(scene, (id, cor) => modeloDe(id, cor));
   arrancada = new Arrancada(racha, scene, THREE);
   rede = new Rede(mapa.ruas, mapa.raio);
   transito = new Transito(scene, rede, mundo, { max: celular ? 11 : 20 });
@@ -262,6 +273,7 @@ function ligarAcoes() {
     relogio: () => jogar('relogio'),
     arrancada: () => jogar('arrancada'),
     garagem: () => abrirGaragem(),
+    online: () => abrirOnline(),
     camera: () => { camModo = (camModo + 1) % CAMS.length; },
     som: () => { som.iniciar(); som.mudo = !som.mudo; document.querySelector('[data-acao=som]').classList.toggle('mudo', som.mudo); },
     reset: () => {
@@ -273,7 +285,7 @@ function ligarAcoes() {
       }
     },
     menu: () => {
-      provaAtual = null;
+      provaAtual = null; esperaOnline = null; rachaOnline = null; controles.travado = false;
       if (modo === 'menu') return;
       racha.parar(); arrancada.parar(); transito.ligar(false); policia.ligar(false); modo = 'menu'; som.pausar();
       document.body.classList.remove('jogando'); fim.classList.remove('on'); menu.classList.add('on');
@@ -355,10 +367,138 @@ function abrirGaragem() {
   garagem.abrir(document.getElementById('garagem'), () => {
     if (garagem.e.carro !== carroId) trocarCarro();
     garagem.aplicar(carro); ajustarRival(); ajustarPolicia(); mostrarGrana();
+    if (online.conectado) online.atualizarEu(euOnline());
   }, () => {
     garagem.fechar(); document.body.classList.remove('garagem');
     modo = 'menu'; menu.classList.add('on'); mostrarGrana();
   });
+}
+
+// ---------- online
+const corAtual = () => { const id = garagem.c.escolha.cor; const o = VISUAL.cor.opcoes.find(x => x.id === id); return o ? o.hex : 0xd6d9d5; };
+const lerNome = () => { try { return localStorage.getItem('online-nome') || ''; } catch { return ''; } };
+const euOnline = () => ({ nome: lerNome(), carro: carroId, cor: corAtual() });
+const NOMES_ROTA = { principal: 'Racha da Lock-Up (1,8 km)', bairro: 'Volta das Avenidas (2,1 km)', cidade: 'Cidade Nova (2 km)', pa: 'PA-160 de ponta a ponta (2,4 km)' };
+
+function abrirOnline() {
+  const menu = document.getElementById('menu');
+  racha.parar(); arrancada.parar(); transito.ligar(false); policia.ligar(false); som.sirene(0);
+  provaAtual = null; esperaOnline = null; rachaOnline = null; controles.travado = false;
+  modo = 'garagem'; menu.classList.remove('on'); document.getElementById('fim').classList.remove('on');
+  document.body.classList.remove('jogando'); document.body.classList.add('garagem');
+  carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
+  const el = document.getElementById('online');
+  el.classList.add('on');
+  if (!el.dataset.ligado) {
+    el.dataset.ligado = '1';
+    el.addEventListener('click', ev => {
+      const b = ev.target.closest('button'); if (!b) return;
+      ev.preventDefault();
+      const nomeEl = el.querySelector('#on-nome'); if (nomeEl) try { localStorage.setItem('online-nome', nomeEl.value.trim().slice(0, 12)); } catch {}
+      const a = b.dataset.on;
+      if (a === 'fechar') { fecharOnline(); modo = 'menu'; menu.classList.add('on'); }
+      else if (a === 'aberta') online.entrar('PEBAS', euOnline());
+      else if (a === 'criar') online.entrar(Math.random().toString(36).slice(2, 6).toUpperCase().replace(/[^A-Z0-9]/g, 'X'), euOnline());
+      else if (a === 'codigo') { const c = (el.querySelector('#on-codigo').value || '').replace(/[^A-Za-z0-9]/g, ''); if (c.length >= 3) online.entrar(c, euOnline()); else avisoOnline('Código com 3 a 8 letras ou números'); }
+      else if (a === 'sair') online.sair();
+      else if (a === 'livre') { fecharOnline(); controles.acoes.livre(); }
+      else if (a === 'racha') online.chamarRacha(b.dataset.rota);
+      renderOnline();
+    });
+    online.eventos.aoMudar = () => renderOnline();
+    online.eventos.aoCair = () => { hud.aviso('Caiu a conexão com a sala', 2.5); renderOnline(); };
+    online.eventos.aoRacha = (m) => prepararRachaOnline(m);
+    online.eventos.aoChegadas = (c) => { chegadasOnline = c; mostrarChegadas(); };
+  }
+  renderOnline();
+}
+function fecharOnline() { document.getElementById('online').classList.remove('on'); document.body.classList.remove('garagem'); }
+function avisoOnline(t) { const m = document.querySelector('#online .g-msg'); if (m) { m.textContent = t; m.hidden = false; setTimeout(() => (m.hidden = true), 2200); } }
+
+function renderOnline() {
+  const el = document.getElementById('online'); if (!el || !el.classList.contains('on')) { atualizarChip(); return; }
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let corpo;
+  if (online.conectado) {
+    const lista = [{ nome: (lerNome() || 'VOCÊ').toUpperCase() + ' (você)', carro: carroId }, ...online.lista()];
+    corpo = `<p class="g-txt">Sala <b class="on-codigo">${esc(online.sala)}</b>${online.sala === 'PEBAS' ? ' (aberta)' : ' · passe o código pros amigos'} · ${lista.length} de 8${online.lat ? ` · ping ${online.lat} ms` : ''}</p>
+      <div class="g-lista rolavel">${lista.map(j => `<div class="g-item"><div><b>${esc(j.nome)}</b><small>${esc(fichaDe(j.carro).nome)}</small></div></div>`).join('')}
+      <div class="g-grupo"><b>Chamar racha (todo mundo da sala larga junto em 6 s)</b><div class="on-rotas">${Object.entries(NOMES_ROTA).map(([id, n]) => `<button data-on="racha" data-rota="${id}">${n}</button>`).join('')}</div></div></div>
+      <button class="bt forte" data-on="livre">Rodar junto pelo bairro</button>
+      <button class="bt" data-on="sair">Sair da sala</button>`;
+  } else if (online.on) {
+    corpo = `<p class="g-txt">Entrando na sala ${esc(online.sala)}…</p><button class="bt" data-on="sair">Cancelar</button>`;
+  } else {
+    corpo = `<label class="on-campo">Seu apelido<input id="on-nome" maxlength="12" autocomplete="off" placeholder="PILOTO" value="${esc(lerNome())}"></label>
+      <button class="bt forte" data-on="aberta">Sala aberta de Parauapebas<small>Entra quem estiver online agora</small></button>
+      <button class="bt forte2" data-on="criar">Criar sala com amigos<small>Gera um código pra passar pra galera</small></button>
+      <div class="on-linha"><input id="on-codigo" maxlength="8" autocomplete="off" placeholder="CÓDIGO"><button class="bt" data-on="codigo">Entrar</button></div>
+      <p class="g-txt">Sem cadastro. Os outros veem seu apelido, seu carro e onde você está no mapa. Nada fica salvo.</p>`;
+  }
+  el.innerHTML = `<div class="g-topo"><div><small>Multiplayer</small><b>ONLINE</b></div><button data-on="fechar" aria-label="Fechar">✕</button></div>${corpo}<div class="g-msg" hidden></div>`;
+  atualizarChip();
+}
+function atualizarChip() {
+  const chip = document.getElementById('online-chip'); if (!chip) return;
+  chip.classList.toggle('on', online.conectado);
+  if (online.conectado) chip.textContent = `ONLINE · ${online.sala} · ${online.outros.size + 1}`;
+}
+
+// racha online: vai pro grid e espera a hora marcada pelo servidor
+function prepararRachaOnline(m) {
+  const vaga = m.vagas.indexOf(online.id);
+  if (vaga < 0) { hud.aviso(`Racha na sala: ${NOMES_ROTA[m.rota] || ''}. Fica pro próximo!`, 2.5); return; }
+  fecharOnline(); document.getElementById('carreira').classList.remove('on'); document.getElementById('garagem').classList.remove('on');
+  document.getElementById('menu').classList.remove('on'); document.getElementById('fim').classList.remove('on');
+  document.body.classList.add('jogando');
+  som.iniciar();
+  racha.parar(); arrancada.parar(); provaAtual = null;
+  racha = m.rota === 'principal' ? rachas.principal : obterRacha(m.rota);
+  rival.racha = racha;
+  transito.ligar(false); policia.ligar(false);       // racha online: pista limpa, igual para todos
+  // grid: duas colunas, 7 m entre as filas
+  const L = racha.largada(), ang = L.jogador.ang, f = [Math.sin(ang), Math.cos(ang)];
+  const col = vaga % 2 === 0 ? L.jogador : L.rival, fila = Math.floor(vaga / 2) * 7;
+  carro.reset(col.x - f[0] * fila, col.z - f[1] * fila, ang); carro.nitro = 1; carro.avaria = 0;
+  modo = 'racha'; controles.travado = true;
+  esperaOnline = m; rachaOnline = m; chegadasOnline = [];
+  posicionarCamera(1, true);
+}
+function largarOnline() {
+  const m = esperaOnline; esperaOnline = null;
+  racha.iniciar(hud, controles, (r) => {
+    modo = 'livre';
+    online.chegou(r.segundos);
+    rachaOnline = Object.assign({}, rachaOnline, { meuTempo: r.segundos });
+    mostrarChegadas(true);
+  }, { premio: [0, 0] });
+}
+function mostrarChegadas(abrir) {
+  const fim = document.getElementById('fim');
+  if (!rachaOnline || !rachaOnline.meuTempo) return;
+  const total = rachaOnline.vagas.length;
+  const lista = chegadasOnline.length ? chegadasOnline : [{ id: online.id, nome: lerNome() || 'VOCÊ', tempo: rachaOnline.meuTempo }];
+  const minha = lista.findIndex(c => c.id === online.id);
+  document.getElementById('fim-titulo').textContent = minha === 0 ? 'Você ganhou o racha online!' : minha > 0 ? `Você chegou em ${minha + 1}º` : 'Chegada';
+  document.getElementById('fim-tempo').textContent = fmtT(rachaOnline.meuTempo);
+  document.getElementById('fim-recorde').textContent = lista.slice(0, 5).map((c, i) => `${i + 1}º ${c.nome} ${fmtT(c.tempo)}`).join(' · ');
+  document.getElementById('fim-dist').textContent = lista.length < total ? `Esperando ${total - lista.length} chegar…` : NOMES_ROTA[rachaOnline.rota] || '';
+  document.getElementById('fim-grana').textContent = '';
+  const [b1, b2] = document.querySelectorAll('#fim [data-acao]');
+  b1.dataset.acao = 'online'; b1.textContent = 'Sala online';
+  b2.dataset.acao = 'livre'; b2.textContent = 'Rodar livre';
+  if (abrir) { document.getElementById('aviso').classList.remove('on'); fim.classList.add('on'); }
+}
+// posição no racha online (pelo quanto cada um já andou na rota)
+function posicaoOnline() {
+  const el = document.getElementById('posicao'); if (!el) return;
+  const eu = racha.sJogador || 0;
+  const outros = online.lista().filter(o => rachaOnline.vagas.includes(o.id));
+  const chegaram = new Set(chegadasOnline.map(c => c.id));
+  const frente = rachaOnline.vagas.filter(id => id !== online.id && (chegaram.has(id) || (outros.find(o => o.id === id) || { s: -1 }).s > eu)).length;
+  const pos = Math.min(rachaOnline.vagas.length, frente + 1);
+  el.classList.add('on'); el.classList.toggle('atras', pos > 1);
+  el.textContent = `${pos}º de ${rachaOnline.vagas.length} · online`;
 }
 
 function enquadrado(nivel) {
@@ -435,7 +575,7 @@ function posicionarCamera(dt, instantaneo) {
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * Math.min(1, dt * (carro.nitroAtivo ? 7 : 3)); camera.updateProjectionMatrix(); }
 }
 
-let ultimo = 0, acc = 0, choqueAntes = 0, fpsT = 0, fpsN = 0, nitroAntes = false;
+let ultimo = 0, acc = 0, choqueAntes = 0, fpsT = 0, fpsN = 0, nitroAntes = false, chipN = 0;
 const PASSO = 1 / 120;
 function loop(t) {
   requestAnimationFrame(loop);
@@ -450,6 +590,12 @@ function loop(t) {
     som.update(carro, inp.acel);
   } else if (modo !== 'menu' && modo !== 'garagem') {
     acc += dt;
+    if (esperaOnline) {
+      const falta = esperaOnline.inicio - online.agoraServidor;
+      if (falta <= 3500) largarOnline();
+      else { const s2 = Math.ceil((falta - 3500) / 1000); if (s2 !== esperaOnline.aviso) { esperaOnline.aviso = s2; hud.aviso(`Racha online: ${NOMES_ROTA[esperaOnline.rota] || ''} · ${s2}`, 1.05); } }
+    }
+    const amigos = online.carros();
     const rInp = rival.ativo ? rival.pensar(dt, racha.sJogador || 0, racha.largando) : null;
     policia.pensar(dt, carro, { racha: racha.ativo && !racha.largando, hud });
     const viaturas = policia.v.filter(p => p.modo !== 'fora');
@@ -463,6 +609,7 @@ function loop(t) {
         if (transito.ativo) transito.colidir(p.carro);
       }
       if (transito.ativo) { const b = transito.colidir(carro); if (b) policia.infracao('bateuTransito'); }
+      for (const o of amigos) colisaoCarros(carro, o);
       acc -= PASSO;
     }
     if (policia.perseguindo) { const d = policia.dmin || 999; som.sirene(1 - d / 160); } else som.sirene(0);
@@ -476,9 +623,16 @@ function loop(t) {
     racha.camDentro = !!CAMS[camModo].dentro;
     racha.update(dt, carro, inp);
     hud.policia = policia.ativo ? viaturas.map(p => p.carro.pos) : null;
+    hud.amigos = amigos.length ? amigos.map(c => c.pos) : null;
+    if (rachaOnline && racha.ativo) posicaoOnline();
     hud.update(dt, carro, racha.ativo ? racha.infoMapa() : null);
     som.update(carro, inp.acel);
   } else carro.atualizarModelo(dt);   // menu e garagem: carro parado
+  if (online.on) {
+    online.update(dt);
+    if (modo !== 'menu') online.enviar(carro, racha.ativo ? racha.sJogador : 0);
+    if (++chipN % 60 === 0) atualizarChip();
+  }
   posicionarCamera(dt);
   renderer.render(scene, camera);
   fpsN++; fpsT += dt; if (fpsT > 1) { window._fps = fpsN / fpsT; fpsN = 0; fpsT = 0; }
@@ -520,7 +674,7 @@ function telaCheia() {
 document.addEventListener('visibilitychange', () => { if (document.hidden && som) som.pausar(); else if (som && modo !== 'menu') som.iniciar(); });
 
 iniciar().catch(e => { console.error(e); progresso(0, 'Não deu para carregar: ' + e.message); });
-window._jogo = () => ({ carro, mundo, camera, scene, renderer, racha, controles, rival, arrancada, garagem, transito, policia, rede });
+window._jogo = () => ({ carro, mundo, camera, scene, renderer, racha, controles, rival, arrancada, garagem, transito, policia, rede, online, carreira });
 // teste sem a aba visível: simula N segundos com uma entrada fixa e desenha um quadro
 window._simular = (seg, inp = {}) => {
   const e = { acel: 0, freio: 0, dir: 0, mao: false, ...inp };
@@ -538,3 +692,5 @@ window._simular = (seg, inp = {}) => {
   renderer.render(scene, camera);
   return { kmh: Math.round(carro.kmh), x: +carro.pos.x.toFixed(1), z: +carro.pos.z.toFixed(1), rua: carro.rua && carro.rua.n, tris: renderer.info.render.triangles, calls: renderer.info.render.calls };
 };
+// teste com a aba escondida (o navegador para o requestAnimationFrame): roda um quadro do jogo na mão
+window._quadro = () => loop(performance.now());

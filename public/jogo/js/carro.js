@@ -155,10 +155,10 @@ export class Carro {
     // direção: menos esterço em alta
     const dMax = 0.62 / (1 + Math.abs(vf) * 0.055);
     const alvo = inp.dir * dMax + (this.avaria || 0) * 0.03 * Math.min(1, Math.abs(vf) / 8);   // suspensão torta puxa para a esquerda
-    this.dir += (alvo - this.dir) * Math.min(1, dt * (inp.analogico ? 14 : 7));
+    this.dir += (alvo - this.dir) * Math.min(1, dt * (inp.analogico ? 18 : 10));
     let wAlvo = vf * Math.tan(this.dir) / F.eixo;
     if (inp.mao && Math.abs(vf) > 7) wAlvo *= 1.7;
-    this.w += (wAlvo - this.w) * Math.min(1, dt * (inp.mao ? 3 : 10));
+    this.w += (wAlvo - this.w) * Math.min(1, dt * (inp.mao ? 3 : 14));
 
     // derrapagem: o lateral morre conforme a aderência
     const vlAntes = vl;

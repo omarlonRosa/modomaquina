@@ -7,6 +7,10 @@ import { rodarFilaThreads, situacaoThreads } from './threads.js';
 import { rodarFilaX, situacaoX } from './x.js';
 import { rodarRadar, paginaRadar } from './radar.js';
 import { registrarVisita, paginaMetricas } from './metricas.js';
+import { salaJogo, SalaJogo } from './jogo.js';
+
+// sala do multiplayer do jogo (Durable Object): precisa sair exportada do módulo principal
+export { SalaJogo };
 
 const ORIGENS = ['https://modomaquina.com.br', 'https://www.modomaquina.com.br', 'https://modomaquina.marlon-assinaturas.workers.dev'];
 const SEGURANCA = {
@@ -148,6 +152,7 @@ export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     if (url.pathname.startsWith('/m/')) return midia(req, env, url);
+    if (url.pathname.startsWith('/api/jogo/sala/')) return salaJogo(req, env, url, ORIGENS);
     try {
       if (url.pathname === '/api/newsletter') {
         if (req.method === 'POST') return await inscrever(req, env);

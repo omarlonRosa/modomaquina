@@ -8,14 +8,15 @@ import { Carro } from './carro.js';
 const embrulhar = a => Math.atan2(Math.sin(a), Math.cos(a));
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
 
-function plaquinha(nome) {
+// plaquinha com o nome em cima do carro (rival em vermelho; jogadores online em azul)
+export function plaquinha(nome, cor = '#ff3b30') {
   const c = document.createElement('canvas'); c.width = 256; c.height = 96;
   const g = c.getContext('2d');
   g.fillStyle = 'rgba(11,16,32,0.8)'; g.beginPath(); g.roundRect(8, 6, 240, 52, 12); g.fill();
-  g.fillStyle = '#ff3b30'; g.fillRect(8, 6, 8, 52);
+  g.fillStyle = cor; g.fillRect(8, 6, 8, 52);
   g.fillStyle = '#fff'; g.font = 'italic 900 34px "Arial Black", Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillText(nome, 132, 33);
-  g.fillStyle = '#ff3b30'; g.beginPath(); g.moveTo(112, 64); g.lineTo(144, 64); g.lineTo(128, 90); g.closePath(); g.fill();
+  g.fillStyle = cor; g.beginPath(); g.moveTo(112, 64); g.lineTo(144, 64); g.lineTo(128, 90); g.closePath(); g.fill();
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true }));
   sp.scale.set(2.4, 0.9, 1); sp.position.y = 2.7; sp.renderOrder = 10;
