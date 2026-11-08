@@ -1,13 +1,20 @@
 // Pontos de referência em volta da Lock-Up, posicionados pelos vídeos de 08/11 (referencias/IMG_2230.MOV, ~10:00-10:40):
-// - o hotel cinza de dois andares na esquina da PA-160 com a Av. Tupinambá (letreiro vertical "HOTEL", "ABERTO 24 HORAS")
+// - o hotel cinza de dois andares na esquina da Rua Aparaí com a Av. Tupinambá, do lado oeste da Aparaí
+//   (letreiro vertical "HOTEL", "ABERTO 24 HORAS"); do lado da PA-160 é terreno vazio (confirmado pelo usuário)
+// - barreiras de concreto no canteiro da PA-160 na saída da Tupinambá: a travessia ali é fechada,
+//   o retorno fica uns 230 m para o sul
 // - o galpão de paredes brancas colado no lado leste da Lock-Up, que fecha a vista de quem sobe a Rua Aparaí
 // - a placa da Lock-Up em dois postes na beira da PA-160
 // Coordenadas do jogo: x = leste, z = sul, origem na Lock-Up.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
-// hotel: retângulo alinhado aos eixos (a Aparaí e a PA-160 correm quase norte-sul aqui)
-const HOTEL = { x0: 28, x1: 40, z0: 40, z1: 69, h: 7.4 };
+// hotel: retângulo alinhado aos eixos (a Aparaí corre quase norte-sul aqui), entre a Aparaí (leste) e os vizinhos
+const HOTEL = { x0: 3.5, x1: 15.3, z0: 40, z1: 67.5, h: 7.4 };
+// terreno vazio entre a Aparaí e a PA-160, do galpão branco até a Tupinambá
+const TERRENO = [[27, 12], [41, 12], [41, 70], [27, 70]];
+// linha do canteiro da PA-160 na saída da Tupinambá (meio entre as duas pistas)
+const BARREIRA = { z0: 64, z1: 106, x: z => 51 - (z - 79) * 0.06 };
 
 // galpão branco: no referencial da Lock-Up, do lado direito dela (quem olha da rua)
 function galpaoBranco(lock) {
@@ -24,7 +31,7 @@ export function areasMarcos(lock) {
   return [
     [[h.x0, h.z0], [h.x1, h.z0], [h.x1, h.z1], [h.x0, h.z1]],
     galpaoBranco(lock),
-    [[PLACA.x - 3.5, PLACA.z - 3.5], [PLACA.x + 1.5, PLACA.z - 3.5], [PLACA.x + 1.5, PLACA.z + 3.5], [PLACA.x - 3.5, PLACA.z + 3.5]],
+    TERRENO,
   ];
 }
 
@@ -191,6 +198,19 @@ export function criarMarcos(lock, mundo, scene) {
   placa.position.set(PLACA.x, 0, PLACA.z); placa.rotation.y = PLACA.ang;
   g.add(placa);
   for (const sx of [-2.2, 2.2]) mundo.addCirculo(PLACA.x + Math.cos(PLACA.ang) * sx, PLACA.z - Math.sin(PLACA.ang) * sx, 0.2);
+
+  // ---------- barreiras de concreto (tipo New Jersey) fechando a travessia do canteiro
+  const blocos = [];
+  const perfil = new THREE.Shape([new THREE.Vector2(-0.3, 0), new THREE.Vector2(0.3, 0), new THREE.Vector2(0.24, 0.25), new THREE.Vector2(0.1, 0.8), new THREE.Vector2(-0.1, 0.8), new THREE.Vector2(-0.24, 0.25)]);
+  for (let z = BARREIRA.z0; z + 2 <= BARREIRA.z1; z += 2.25) {
+    const b = new THREE.ExtrudeGeometry(perfil, { depth: 2, bevelEnabled: false });   // perfil no plano XY, comprimento em z
+    const xa = BARREIRA.x(z), xb = BARREIRA.x(z + 2);
+    b.rotateY(Math.atan2(xb - xa, 2)); b.translate(xa, 0, z);
+    blocos.push(b);
+  }
+  const mb = new THREE.Mesh(mergeGeometries(blocos), new THREE.MeshStandardMaterial({ color: 0xcfc6b4, roughness: 0.95 }));
+  g.add(mb);
+  mundo.addSeg(BARREIRA.x(BARREIRA.z0), BARREIRA.z0, BARREIRA.x(BARREIRA.z1), BARREIRA.z1);
 
   return g;
 }
