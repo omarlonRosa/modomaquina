@@ -3,7 +3,7 @@
 // fora das aberturas (só seguem ruas do mapa), diminuem nas curvas e param atrás de quem está na frente.
 // Também exporta a rede de ruas (Rede), que a polícia usa para achar caminho até o jogador.
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { modeloTransito, TIPOS_TRANSITO } from './modelos.js';
 
 const chave = p => p[0].toFixed(1) + ',' + p[1].toFixed(1);
 const VEL = { 1: 8.5, 2: 11, 3: 13, 4: 17, 5: 17 };          // m/s por classe de rua (30 a 60 km/h)
@@ -75,45 +75,14 @@ export class Rede {
   }
 }
 
-// ---------- modelos genéricos (sem marca): hatch, sedã, picape, SUV
+// ---------- modelos genéricos (sem marca), os mesmos dos carros da garagem em versão leve (modelos.js)
 const CORES = [0xf2f2ee, 0xd8d8d4, 0x9aa0a6, 0x2b2e33, 0x111214, 0x8f1a1a, 0x1d3d7a, 0x5a6b4e, 0xc9b48a, 0xb0b5ba, 0xe8e8e4, 0x6a1f1f];
-function caixa(w, h, l, x, y, z, cor) {
-  const g = new THREE.BoxGeometry(w, h, l).translate(x, y, z).toNonIndexed();
-  const c = new THREE.Color(cor), arr = new Float32Array(g.attributes.position.count * 3);
-  for (let i = 0; i < arr.length; i += 3) { arr[i] = c.r; arr[i + 1] = c.g; arr[i + 2] = c.b; }
-  g.setAttribute('color', new THREE.BufferAttribute(arr, 3)); g.deleteAttribute('uv');
-  return g;
-}
-const FORMAS = {
-  hatch:  { L: 3.9, W: 1.68, H: 0.75, cab: [1.55, 0.62, -0.25], vid: 1.0 },
-  seda:   { L: 4.45, W: 1.72, H: 0.72, cab: [1.75, 0.62, -0.05], vid: 1.0 },
-  picape: { L: 4.9, W: 1.8, H: 0.85, cab: [1.6, 0.7, 0.65], cacamba: true },
-  suv:    { L: 4.5, W: 1.82, H: 0.95, cab: [2.3, 0.75, -0.3] },
-};
-function modelo(tipo) {
-  const f = FORMAS[tipo], y0 = 0.32;
-  const corpo = [caixa(f.W, f.H, f.L, 0, y0 + f.H / 2, 0, 0xffffff)];
-  const [cl, ch, cz] = f.cab;
-  corpo.push(caixa(f.W - 0.12, ch, cl, 0, y0 + f.H + ch / 2, cz, 0xffffff));
-  if (f.cacamba) corpo.push(caixa(f.W, 0.35, 0.08, 0, y0 + f.H + 0.17, -f.L / 2 + 0.04, 0xffffff));
-  const det = [];
-  // vidros (escuros) por cima da cabine
-  det.push(caixa(f.W - 0.08, ch * 0.7, cl * 0.92, 0, y0 + f.H + ch * 0.48, cz, 0x0c1116));
-  // rodas
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) det.push(caixa(0.24, 0.62, 0.62, sx * (f.W / 2 - 0.1), 0.31, sz * (f.L / 2 - 0.75), 0x0b0b0c));
-  // faróis e lanternas
-  for (const sx of [-1, 1]) {
-    det.push(caixa(0.36, 0.14, 0.04, sx * (f.W / 2 - 0.3), y0 + f.H - 0.18, f.L / 2 + 0.01, 0xfff4d8));
-    det.push(caixa(0.34, 0.14, 0.04, sx * (f.W / 2 - 0.28), y0 + f.H - 0.16, -f.L / 2 - 0.01, 0xd01010));
-  }
-  return { corpo: mergeGeometries(corpo), det: mergeGeometries(det), L: f.L };
-}
 
 export class Transito {
   constructor(scene, rede, mundo, opcoes = {}) {
     this.scene = scene; this.rede = rede; this.mundo = mundo;
     this.max = opcoes.max || 20;
-    this.modelos = Object.fromEntries(Object.keys(FORMAS).map(t => [t, modelo(t)]));
+    this.modelos = Object.fromEntries([...new Set(TIPOS_TRANSITO)].map(t => [t, modeloTransito(t)]));
     this.matDet = new THREE.MeshBasicMaterial({ vertexColors: true });
     this.carros = [];
     this.ativo = false;
@@ -121,10 +90,10 @@ export class Transito {
   }
 
   criarCarro() {
-    const tipos = ['hatch', 'hatch', 'seda', 'seda', 'picape', 'suv'], tipo = tipos[Math.floor(Math.random() * tipos.length)];
+    const tipo = TIPOS_TRANSITO[Math.floor(Math.random() * TIPOS_TRANSITO.length)];
     const m = this.modelos[tipo];
     const g = new THREE.Group();
-    const corpo = new THREE.Mesh(m.corpo, new THREE.MeshStandardMaterial({ vertexColors: true, color: CORES[Math.floor(Math.random() * CORES.length)], roughness: 0.45, metalness: 0.3 }));
+    const corpo = new THREE.Mesh(m.corpo, new THREE.MeshStandardMaterial({ vertexColors: true, color: CORES[Math.floor(Math.random() * CORES.length)], roughness: 0.42, metalness: 0.15 }));
     g.add(corpo, new THREE.Mesh(m.det, this.matDet));
     this.grupo.add(g);
     return { g, L: m.L, pos: new THREE.Vector3(), vel: new THREE.Vector2(), ang: 0, choque: 0, e: null, s: 0, v: 0, faixa: 0, parado: 0, vivo: false };

@@ -12,6 +12,7 @@ import { Arrancada } from './arrancada.js';
 import { Garagem } from './garagem.js';
 import { Rede, Transito } from './transito.js';
 import { Policia } from './policia.js';
+import { montarModelo, fichaDe } from './modelos.js';
 
 const celular = matchMedia('(pointer: coarse)').matches;
 document.body.classList.toggle('toque', celular);
@@ -78,6 +79,10 @@ async function baixar(url, peso, base) {
 
 let mundo, carro, hud, racha, lockup, som, controles, rival, arrancada, garagem;
 let garagemAng = 0.9, arrastando = null, rede, transito, policia;
+let unoBase, carroId = 'uno';
+// rival no racha e na arrancada: um carro da mesma turma do seu (o desempenho dele é igualado em ajustarRival)
+const RIVAL_DE = { uno: 'uno', besouro: 'quadrado', quadrado: 'tufao', tufao: 'canecos', canecos: 'tufao', barao: 'bisao', bisao: 'bala', bala: 'bisao' };
+const modeloDe = (id, cor) => id === 'uno' ? { scene: unoBase.clone(true) } : montarModelo(id, cor);
 let modo = 'menu', camModo = 0, vidros = [];
 const CAMS = [{ d: 5.4, h: 2.0, olhar: 1.0 }, { d: 9, h: 3.8, olhar: 1.2 }, { d: -0.35, h: 1.12, olhar: 1.0, dentro: true }];
 
@@ -94,13 +99,13 @@ async function iniciar() {
   // texturas como <img> (blob: liberado em img-src) e não por fetch, que a CSP do site bloqueia em connect-src
   const loader = new GLTFLoader().register(parser => { parser.textureLoader = new THREE.TextureLoader(parser.options.manager); return { name: 'texturas_por_img' }; });
   const gltf = await loader.parseAsync(glb, '');
-  const gltfRival = { scene: gltf.scene.clone(true) };        // cópia antes do Carro mexer na hierarquia
+  unoBase = gltf.scene.clone(true);                            // cópia limpa antes do Carro mexer na hierarquia
+  const gltfRival = { scene: gltf.scene.clone(true) };
   const gltfPolicia = [{ scene: gltf.scene.clone(true) }, { scene: gltf.scene.clone(true) }];
-  carro = new Carro(gltf, scene);
-  // vidros: o insulfilm do modelo (quase preto) deixa a visão do motorista toda escura; por dentro ficam claros
-  vidros = [];
-  carro.grupo.traverse(o => { if (o.isMesh && o.material && o.material.name === 'glass') vidros.push(o.material); });
-  for (const m of vidros) m.userData.opacidade = m.opacity;
+  garagem = new Garagem();
+  carroId = garagem.e.carro;
+  carro = new Carro(carroId === 'uno' ? gltf : modeloDe(carroId), scene);
+  coletarVidros();
   controles = new Controles();
   hud = new Hud(mapa, mapa.lockup, mundo.lotes.concat(areasMarcos(mapa.lockup).slice(0, 2).map(p => ({ p }))));
   racha = new Racha(mapa.racha, scene, mundo);
@@ -110,10 +115,9 @@ async function iniciar() {
   transito = new Transito(scene, rede, mundo, { max: celular ? 11 : 20 });
   policia = new Policia(gltfPolicia, scene, rede, mundo);
   policia.aoEnquadrar = enquadrado; policia.aoFugir = despistou;
-  garagem = new Garagem();
   try { garagem.projeto = await (await fetch(comVersao('dados/projeto.json'))).json(); } catch (e) { console.warn('projeto.json', e); }
   garagem.aplicar(carro);
-  ajustarRival();
+  ajustarRival(); ajustarPolicia();
   mostrarGrana();
   som = new Som();
   carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
@@ -136,6 +140,7 @@ function ligarAcoes() {
     document.body.classList.add('jogando');
     carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
     racha.parar(); arrancada.parar();
+    if (tipo === 'racha' || tipo === 'arrancada') prepararRival();
     // trânsito e polícia: no rodar livre e nos rachas; a arrancada é com a pista fechada
     transito.ligar(tipo !== 'arrancada'); policia.ligar(tipo !== 'arrancada');
     const btRepetir = document.querySelector('#fim [data-acao]');
@@ -208,10 +213,42 @@ function ligarAcoes() {
   };
 }
 
-// o Zé também mexe no carro: acompanha a preparação do seu Uno para o racha seguir disputado
+// vidros: o insulfilm do modelo (quase preto) deixa a visão do motorista toda escura; por dentro ficam claros
+function coletarVidros() {
+  vidros = [];
+  carro.grupo.traverse(o => { if (o.isMesh && o.material && o.material.name === 'glass' && !vidros.includes(o.material)) vidros.push(o.material); });
+  for (const m of vidros) if (m.userData.opacidade === undefined) m.userData.opacidade = m.opacity;
+}
+
+// trocou de carro na garagem: novo modelo e nova ficha, mesma física
+function trocarCarro() {
+  carroId = garagem.e.carro;
+  carro.trocarModelo(modeloDe(carroId));
+  coletarVidros();
+}
+
+// o Zé pega um carro da mesma turma do seu, pintado de vermelho
+let rivalId = 'uno';
+function prepararRival() {
+  const id = RIVAL_DE[carroId] || 'uno';
+  if (id !== rivalId) { rivalId = id; rival.carro.trocarModelo(modeloDe(id, 0xff2a1f), { cor: 0xff2a1f, leve: true }); }
+  ajustarRival();
+}
+
+// o Zé também mexe no carro: chega perto do desempenho do seu (um pouco abaixo quanto mais preparado), seja qual for o carro dele
 function ajustarRival() {
-  const p = garagem.preparo();
-  rival.carro.mods = { acel: 1 + 0.42 * p, vmax: 7.5 * p, grip: 1 + 0.25 * p, freio: 1 + 0.15 * p, nitroDur: 3 + 1.6 * p, nitroRec: 1 + 0.4 * p };
+  const p = garagem.preparo(), F = carro.ficha, M = carro.mods || {}, R = rival.carro.ficha;
+  rival.carro.mods = {
+    acel: F.acel * (M.acel || 1) * (1 - 0.08 * p) / R.acel, vmax: F.vmax + (M.vmax || 0) - 3.5 * p - R.vmax,
+    grip: F.grip * (M.grip || 1) * (1 - 0.13 * p) / R.grip, freio: F.freio * (1 + 0.15 * p) / R.freio, nitroDur: 3 + 1.6 * p, nitroRec: 1 + 0.4 * p,
+  };
+}
+
+// as viaturas (Uno preparado) acompanham carro rápido, senão ninguém nunca é pego
+function ajustarPolicia() {
+  const F = carro.ficha, M = carro.mods || {};
+  policia.escala = Math.max(1, (F.vmax + (M.vmax || 0)) / 55);
+  for (const v of policia.v) v.carro.mods = { acel: Math.max(1.2, F.acel * (M.acel || 1) / 4.6 * 0.95), vmax: Math.max(4, (F.vmax + (M.vmax || 0)) * 0.93 - 49), grip: 1.15, freio: 1.1 };
 }
 
 function abrirGaragem() {
@@ -220,7 +257,10 @@ function abrirGaragem() {
   modo = 'garagem'; menu.classList.remove('on'); document.getElementById('fim').classList.remove('on');
   document.body.classList.remove('jogando'); document.body.classList.add('garagem');
   carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
-  garagem.abrir(document.getElementById('garagem'), () => { garagem.aplicar(carro); ajustarRival(); mostrarGrana(); }, () => {
+  garagem.abrir(document.getElementById('garagem'), () => {
+    if (garagem.e.carro !== carroId) trocarCarro();
+    garagem.aplicar(carro); ajustarRival(); ajustarPolicia(); mostrarGrana();
+  }, () => {
     garagem.fechar(); document.body.classList.remove('garagem');
     modo = 'menu'; menu.classList.add('on'); mostrarGrana();
   });
@@ -260,7 +300,7 @@ function posicionarCamera(dt, instantaneo) {
   if (modo === 'garagem') {
     if (!arrastando) garagemAng += dt * 0.18;
     const emPe = innerHeight > innerWidth;                    // em pé o painel cobre a metade de baixo: câmera mais longe e alta
-    const r = emPe ? 7.5 : 5.0, alt = emPe ? 2.6 : 1.55;
+    const kL = Math.max(1, carro.ficha.L / 3.7), r = (emPe ? 7.5 : 5.0) * kL, alt = emPe ? 2.6 : 1.55;
     alvoCam.set(carro.pos.x + Math.sin(carro.ang + garagemAng) * r, alt, carro.pos.z + Math.cos(carro.ang + garagemAng) * r);
     const dx = carro.pos.x - alvoCam.x, dz = carro.pos.z - alvoCam.z, L = Math.hypot(dx, dz) || 1;
     const painelDireita = innerWidth > innerHeight;            // deitado: painel à direita; em pé: painel embaixo

@@ -1,8 +1,10 @@
 // Garagem da Lock-Up: gasta a grana dos rachas e arrancadas em peças que mudam o Uno de verdade
 // (motor, turbo, nitro, pneus, suspensão) e no visual (cor, rodas, neon). A aba "Projeto Uno" mostra
 // peças que destravam quando o restomod real avança (dados/projeto.json: o Modo Máquina marca as etapas feitas).
+// A aba "Carros" vende os outros carros (modelos.js); cada carro guarda as próprias peças e o visual.
 // Tudo fica salvo no aparelho (localStorage).
 import * as THREE from 'three';
+import { CARROS, fichaDe } from './modelos.js';
 
 export const DESEMPENHO = [
   { id: 'motor', nome: 'Motor', niveis: ['1.6R original', 'Preparação leve', 'Comando e cabeçote', 'Forjado'], precos: [0, 300, 700, 1300],
@@ -50,10 +52,23 @@ const gravarGrana = v => { try { localStorage.setItem('racha-grana', String(v));
 export class Garagem {
   constructor() {
     let e = null; try { e = JSON.parse(localStorage.getItem(CHAVE)); } catch {}
-    this.e = Object.assign({ niveis: {}, donos: { cor: ['branco'], rodas: ['preta'], neon: ['sem'] }, escolha: { cor: 'branco', rodas: 'preta', neon: 'sem' } }, e || {});
-    for (const p of DESEMPENHO) if (this.e.niveis[p.id] === undefined) this.e.niveis[p.id] = 0;
+    this.e = Object.assign({ donos: { cor: ['branco'], rodas: ['preta'], neon: ['sem'] }, carro: 'uno', frota: ['uno'], porCarro: {} }, e || {});
+    // salvo antigo (só o Uno): as peças e o visual viram do Uno
+    if (this.e.niveis) { this.e.porCarro.uno = { niveis: this.e.niveis, escolha: this.e.escolha }; delete this.e.niveis; delete this.e.escolha; }
+    for (const id of this.e.frota) this.doCarro(id);
     this.projeto = { etapas: [] };
   }
+  // peças e visual de um carro (cria na primeira vez, com a cor de fábrica)
+  doCarro(id) {
+    let c = this.e.porCarro[id];
+    if (!c) c = this.e.porCarro[id] = { niveis: {}, escolha: { cor: fichaDe(id).cor, rodas: 'preta', neon: 'sem' } };
+    for (const p of DESEMPENHO) if (c.niveis[p.id] === undefined) c.niveis[p.id] = 0;
+    if (!this.e.donos.cor.includes(c.escolha.cor) && !VISUAL.cor.opcoes.find(o => o.id === c.escolha.cor && o.projeto)) this.e.donos.cor.push(c.escolha.cor);
+    return c;
+  }
+  get c() { return this.doCarro(this.e.carro); }
+  get ficha() { return fichaDe(this.e.carro); }
+  precoPeca(p, n) { return Math.round(p.precos[n] * this.ficha.peca / 10) * 10; }
   salvar() { try { localStorage.setItem(CHAVE, JSON.stringify(this.e)); } catch {} }
   get grana() { return lerGrana(); }
 
@@ -64,7 +79,7 @@ export class Garagem {
   mods() {
     const m = { acel: 1, vmax: 0, grip: 1, freio: 1, nitroDur: 3, nitroRec: 1, rebaixa: 0 };
     for (const p of DESEMPENHO) {
-      const f = p.efeito(this.e.niveis[p.id] || 0);
+      const f = p.efeito(this.c.niveis[p.id] || 0);
       if (f.acel) m.acel *= f.acel; if (f.vmax) m.vmax += f.vmax; if (f.grip) m.grip *= f.grip; if (f.freio) m.freio *= f.freio;
       if (f.nitroDur) m.nitroDur = f.nitroDur; if (f.nitroRec) m.nitroRec = f.nitroRec; if (f.rebaixa !== undefined) m.rebaixa = Math.max(m.rebaixa, f.rebaixa);
     }
@@ -75,14 +90,14 @@ export class Garagem {
   // nível geral de preparação (0 a 1), usado para o rival acompanhar
   preparo() {
     let tot = 0, max = 0;
-    for (const p of DESEMPENHO) { tot += this.e.niveis[p.id] || 0; max += p.niveis.length - 1; }
+    for (const p of DESEMPENHO) { tot += this.c.niveis[p.id] || 0; max += p.niveis.length - 1; }
     return max ? tot / max : 0;
   }
 
   // aplica peças e visual no carro do jogador
   aplicar(carro) {
     carro.mods = this.mods();
-    const op = (cat) => VISUAL[cat].opcoes.find(o => o.id === this.e.escolha[cat]) || VISUAL[cat].opcoes[0];
+    const op = (cat) => VISUAL[cat].opcoes.find(o => o.id === this.c.escolha[cat]) || VISUAL[cat].opcoes[0];
     // pintura e rodas: materiais próprios do jogador (o rival usa cópias da mesma malha)
     if (!carro.matsGaragem) {
       carro.matsGaragem = { paint: [], rodas: [] };
@@ -131,6 +146,7 @@ export class Garagem {
         if (b.dataset.fechar !== undefined) { this.aoFechar(); return; }
         if (b.dataset.peca) this.comprarPeca(b.dataset.peca);
         if (b.dataset.cat) this.escolher(b.dataset.cat, b.dataset.op);
+        if (b.dataset.carro) this.carroEscolhido(b.dataset.carro);
       });
     }
     el.classList.add('on');
@@ -141,12 +157,12 @@ export class Garagem {
   aviso(txt) { this.msg = txt; this.render(); clearTimeout(this.tMsg); this.tMsg = setTimeout(() => { this.msg = ''; this.render(); }, 2200); }
 
   comprarPeca(id) {
-    const p = DESEMPENHO.find(x => x.id === id), n = this.e.niveis[id] || 0;
+    const p = DESEMPENHO.find(x => x.id === id), n = this.c.niveis[id] || 0;
     if (n >= p.niveis.length - 1) return;
-    const preco = p.precos[n + 1];
+    const preco = this.precoPeca(p, n + 1);
     if (this.grana < preco) { this.aviso(`Falta R$ ${preco - this.grana}. Bora pro racha!`); return; }
     gravarGrana(this.grana - preco);
-    this.e.niveis[id] = n + 1; this.salvar();
+    this.c.niveis[id] = n + 1; this.salvar();
     this.aviso(`${p.niveis[n + 1]} instalado!`);
     this.aoMudar();
   }
@@ -159,28 +175,50 @@ export class Garagem {
       if (this.grana < o.preco) { this.aviso(`Falta R$ ${o.preco - this.grana}. Bora pro racha!`); return; }
       gravarGrana(this.grana - o.preco); this.e.donos[cat].push(id);
     }
-    this.e.escolha[cat] = id; this.salvar();
+    this.c.escolha[cat] = id; this.salvar();
+    this.aoMudar(); this.render();
+  }
+
+  // comprar ou trocar de carro
+  carroEscolhido(id) {
+    const f = fichaDe(id);
+    if (!this.e.frota.includes(id)) {
+      if (this.grana < f.preco) { this.aviso(`Falta R$ ${(f.preco - this.grana).toLocaleString('pt-BR')} pro ${f.nome}. Bora pro racha!`); return; }
+      gravarGrana(this.grana - f.preco); this.e.frota.push(id); this.doCarro(id);
+      this.e.carro = id; this.salvar();
+      this.aviso(`${f.nome} é seu!`);
+    } else { this.e.carro = id; this.salvar(); }
     this.aoMudar(); this.render();
   }
 
   render() {
     if (!this.el) return;
-    const m = this.mods(), real = r => r.toLocaleString('pt-BR');
-    const barras = [
-      ['Aceleração', (m.acel - 1) / 0.55], ['Velocidade', m.vmax / 11], ['Aderência', (m.grip - 1) / 0.43], ['Nitro', (m.nitroDur - 3) / 3.2],
-    ].map(([n, f]) => `<div class="g-barra"><span>${n}</span><i><b style="width:${Math.round(18 + Math.min(1, f) * 82)}%"></b></i></div>`).join('');
+    const m = this.mods(), real = r => r.toLocaleString('pt-BR'), F = this.ficha;
+    // barras do carro inteiro (fábrica + peças), na mesma régua para todos os carros
+    const notas = (f, mm) => [['Aceleração', (f.acel * mm.acel - 3.6) / 8.8], ['Velocidade', (f.vmax + mm.vmax - 38) / 47], ['Aderência', (f.grip * mm.grip - 0.85) / 0.97], ['Nitro', (mm.nitroDur - 3) / 3.2]];
+    const barrasDe = (lista) => lista.map(([n, f]) => `<div class="g-barra"><span>${n}</span><i><b style="width:${Math.round(10 + Math.max(0, Math.min(1, f)) * 90)}%"></b></i></div>`).join('');
+    const barras = barrasDe(notas(F, m));
     let lista = '';
-    if (this.aba === 'desempenho') {
+    if (this.aba === 'carros') {
+      const base = { acel: 1, vmax: 0, grip: 1, nitroDur: 3 };
+      lista = CARROS.map(f => {
+        const meu = this.e.frota.includes(f.id), usando = this.e.carro === f.id;
+        const kmh = Math.round(f.vmax * 3.6);
+        return `<div class="g-carro ${usando ? 'esc' : ''}"><div><b>${f.nome}</b><small>${f.tipo} · ${kmh} km/h de fábrica</small>
+          <div class="g-mini">${barrasDe(notas(f, base).slice(0, 3))}</div></div>
+          ${usando ? '<em>na garagem</em>' : `<button data-carro="${f.id}">${meu ? 'Usar' : 'Comprar'}<small>${meu ? 'seu' : 'R$ ' + real(f.preco)}</small></button>`}</div>`;
+      }).join('');
+    } else if (this.aba === 'desempenho') {
       lista = DESEMPENHO.map(p => {
-        const n = this.e.niveis[p.id] || 0, ult = n >= p.niveis.length - 1;
+        const n = this.c.niveis[p.id] || 0, ult = n >= p.niveis.length - 1;
         const pontos = p.niveis.map((_, i) => `<i class="${i <= n ? 'on' : ''}"></i>`).join('');
         return `<div class="g-item"><div><b>${p.nome}</b><small>${p.niveis[n]}</small><span class="g-pontos">${pontos}</span></div>
-          ${ult ? '<em>no máximo</em>' : `<button data-peca="${p.id}">${p.niveis[n + 1]}<small>R$ ${real(p.precos[n + 1])}</small></button>`}</div>`;
+          ${ult ? '<em>no máximo</em>' : `<button data-peca="${p.id}">${p.niveis[n + 1]}<small>R$ ${real(this.precoPeca(p, n + 1))}</small></button>`}</div>`;
       }).join('');
     } else if (this.aba === 'visual') {
       lista = Object.entries(VISUAL).map(([cat, v]) => `<div class="g-grupo"><b>${v.nome}</b><div class="g-ops">${v.opcoes.map(o => {
         const dono = this.e.donos[cat].includes(o.id) || (o.projeto && this.liberado(o.projeto));
-        const esc = this.e.escolha[cat] === o.id;
+        const esc = this.c.escolha[cat] === o.id;
         const amostra = o.hex === null ? 'transparent' : '#' + o.hex.toString(16).padStart(6, '0');
         const preco = dono ? (esc ? 'usando' : 'seu') : o.projeto ? 'projeto' : 'R$ ' + o.preco;
         return `<button data-cat="${cat}" data-op="${o.id}" class="${esc ? 'esc' : ''} ${!dono && o.projeto ? 'trancado' : ''}"><i style="background:${amostra}"></i>${o.nome}<small>${preco}</small></button>`;
@@ -192,8 +230,8 @@ export class Garagem {
         (this.projeto.apoio ? `<a class="g-apoio" href="${this.projeto.apoio}" target="_blank" rel="noopener">Acompanhe e apoie o projeto →</a>` : '');
     }
     this.el.innerHTML = `
-      <div class="g-topo"><div><small>Lock-Up Auto Center</small><b>GARAGEM</b></div><span class="g-caixa">R$ ${real(this.grana)}</span><button data-fechar aria-label="Sair da garagem">✕</button></div>
-      <div class="g-abas">${[['desempenho', 'Desempenho'], ['visual', 'Visual'], ['projeto', 'Projeto Uno']].map(([id, n]) => `<button data-aba="${id}" class="${this.aba === id ? 'on' : ''}">${n}</button>`).join('')}</div>
+      <div class="g-topo"><div><small>Garagem da Lock-Up</small><b>${F.nome.toUpperCase()}</b></div><span class="g-caixa">R$ ${real(this.grana)}</span><button data-fechar aria-label="Sair da garagem">✕</button></div>
+      <div class="g-abas">${[['carros', 'Carros'], ['desempenho', 'Peças'], ['visual', 'Visual'], ['projeto', 'Projeto Uno']].map(([id, n]) => `<button data-aba="${id}" class="${this.aba === id ? 'on' : ''}">${n}</button>`).join('')}</div>
       <div class="g-stats">${barras}</div>
       <div class="g-lista rolavel">${lista}</div>
       ${this.msg ? `<div class="g-msg">${this.msg}</div>` : ''}`;

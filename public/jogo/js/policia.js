@@ -128,7 +128,7 @@ export class Policia {
           p.cam = [[c.pos.x, c.pos.z], [jog.pos.x + jog.vel.x * t, jog.pos.z + jog.vel.y * t]]; p.iCam = 0;
         }
         c.bonus = 0.6 + this.nivel * 0.5;
-        this.seguir(p, dt, 30 + this.nivel * 4, true, d, Math.abs(jog.vf));
+        this.seguir(p, dt, (30 + this.nivel * 4) * (this.escala || 1), true, d, Math.abs(jog.vf));   // escala: carro do jogador mais rápido (main.js)
       }
       // giroflex pisca (na ronda, apagado)
       const on = p.modo === 'caca', fase = Math.floor(performance.now() / 130) % 2;

@@ -13,8 +13,9 @@ const ZONA = [6300, 6950];            // troca perfeita
 
 const torque = rpm => { const x = (rpm - 5300) / 4300; return Math.max(0.42, 1 - x * x); };
 
-function piloto(mods = {}) {
-  return { m: { acel: mods.acel || 1, vmax: mods.vmax || 0, nitroDur: mods.nitroDur || 3 }, s: 0, v: 0, g: 0, rpm: LENTA, trocando: 0, boost: 0, patina: 0, nitro: 1, nitroOn: false,
+// ficha do carro (modelos.js): AG cresce com a aceleração de fábrica e as marchas esticam com a velocidade final
+function piloto(mods = {}, ficha = {}) {
+  return { m: { acel: (mods.acel || 1) * (ficha.acel || 4.6) / 4.6, vmax: (mods.vmax || 0) + (ficha.vmax || 49) - 49, nitroDur: mods.nitroDur || 3 }, s: 0, v: 0, g: 0, rpm: LENTA, trocando: 0, boost: 0, patina: 0, nitro: 1, nitroOn: false,
     largou: false, queimou: false, reacao: null, tempo: null, vFinal: 0, noCorte: 0 };
 }
 
@@ -35,7 +36,7 @@ function passo(p, dt, acel, nitro) {
     else a = acel * AG[p.g] * p.m.acel * torque(p.rpm) * (p.boost > 0 ? 1.13 : 1) * (p.patina > 0 ? 0.62 : 1);
   }
   p.nitroOn = !!nitro && p.nitro > 0 && p.trocando <= 0;
-  if (p.nitroOn) { a += 3.7; p.nitro = Math.max(0, p.nitro - dt / (2.6 * p.m.nitroDur / 3)); }
+  if (p.nitroOn) { a += 3.7 * (0.6 + 0.4 * p.m.acel); p.nitro = Math.max(0, p.nitro - dt / (2.6 * p.m.nitroDur / 3)); }
   a -= 0.00085 * p.v * p.v;                         // ar
   p.boost -= dt; p.patina -= dt;
   p.v = Math.max(0, p.v + a * dt); p.s += p.v * dt;
@@ -86,7 +87,7 @@ export class Arrancada {
 
   iniciar(carro, rival, hud, aoTerminar) {
     this.carro = carro; this.rival = rival; this.hud = hud; this.fim = aoTerminar;
-    this.eu = piloto(carro.mods); this.ele = piloto(rival.carro.mods);
+    this.eu = piloto(carro.mods, carro.ficha); this.ele = piloto(rival.carro.mods, rival.carro.ficha);
     this.eu.nitro = 1; this.ele.nitro = 1;
     this.fase = 'pre';           // pre (preparar, ~1 s) → arvore (sozinha) → corrida → acabou
     this.t = 0; this.tVerde = null; this.freioAntes = false; this.trocaAntes = false; this.tAcabou = 0;

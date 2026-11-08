@@ -179,6 +179,12 @@
   .g-item button { border: 0; border-radius: 10px; padding: 8px 10px; background: var(--laranja); font-weight: 800; font-size: 12px; text-align: center; max-width: 46%; }
   .g-item button small { font-size: 11px; opacity: .9; } .g-item em { font-size: 12px; opacity: .6; font-style: normal; }
   .g-item.trancado { opacity: .7; }
+  .g-carro { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 12px; background: #ffffff0d; border: 1px solid transparent; }
+  .g-carro.esc { border-color: var(--laranja); background: #e8541c1f; }
+  .g-carro > div { flex: 1; min-width: 0; } .g-carro > div > b { display: block; font-size: 15px; font-style: italic; } .g-carro > div > small { display: block; font-size: 11.5px; opacity: .7; }
+  .g-mini { display: grid; gap: 2px; margin-top: 5px; } .g-mini .g-barra { font-size: 10px; } .g-mini .g-barra span { width: 60px; }
+  .g-carro button { border: 0; border-radius: 10px; padding: 8px 12px; background: var(--laranja); font-weight: 800; font-size: 13px; text-align: center; }
+  .g-carro button small { font-size: 11px; opacity: .9; } .g-carro em { font-size: 12px; opacity: .6; font-style: normal; }
   .g-grupo > b { display: block; font-size: 13px; margin: 2px 0 6px; opacity: .8; }
   .g-ops { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
   .g-ops button { border: 1px solid #ffffff1a; border-radius: 10px; padding: 7px 6px; background: #ffffff0a; font-size: 12px; font-weight: 700; text-align: left; display: flex; flex-direction: column; gap: 3px; }
@@ -193,6 +199,7 @@
     .g-abas button { padding: 6px 4px; font-size: 12px; } .g-stats { gap: 2px 10px; }
     .g-item { padding: 7px 8px; } .g-item b { font-size: 13.5px; } .g-item small { font-size: 11px; }
     .g-item button { padding: 6px 8px; font-size: 11px; }
+    .g-carro { padding: 7px 8px; } .g-carro > div > b { font-size: 13.5px; } .g-mini { display: none; }
   }
   .g-msg { position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 10px; border-radius: 10px; background: #1f7a3c; font-weight: 800; text-align: center; font-size: 14px; }
   /* polícia */
@@ -215,20 +222,21 @@
  "imports": {
   "three": "./vendor/three/build/three.module.js",
   "three/addons/": "./vendor/three/examples/jsm/",
-  "./js/arrancada.js": "./js/arrancada.js?v=d4d7d9eed4",
-  "./js/carro.js": "./js/carro.js?v=d4d7d9eed4",
-  "./js/construcoes.js": "./js/construcoes.js?v=d4d7d9eed4",
-  "./js/controles.js": "./js/controles.js?v=d4d7d9eed4",
-  "./js/garagem.js": "./js/garagem.js?v=d4d7d9eed4",
-  "./js/hud.js": "./js/hud.js?v=d4d7d9eed4",
-  "./js/lockup.js": "./js/lockup.js?v=d4d7d9eed4",
-  "./js/main.js": "./js/main.js?v=d4d7d9eed4",
-  "./js/marcos.js": "./js/marcos.js?v=d4d7d9eed4",
-  "./js/mundo.js": "./js/mundo.js?v=d4d7d9eed4",
-  "./js/policia.js": "./js/policia.js?v=d4d7d9eed4",
-  "./js/racha.js": "./js/racha.js?v=d4d7d9eed4",
-  "./js/rival.js": "./js/rival.js?v=d4d7d9eed4",
-  "./js/transito.js": "./js/transito.js?v=d4d7d9eed4"
+  "./js/arrancada.js": "./js/arrancada.js?v=010b079e85",
+  "./js/carro.js": "./js/carro.js?v=010b079e85",
+  "./js/construcoes.js": "./js/construcoes.js?v=010b079e85",
+  "./js/controles.js": "./js/controles.js?v=010b079e85",
+  "./js/garagem.js": "./js/garagem.js?v=010b079e85",
+  "./js/hud.js": "./js/hud.js?v=010b079e85",
+  "./js/lockup.js": "./js/lockup.js?v=010b079e85",
+  "./js/main.js": "./js/main.js?v=010b079e85",
+  "./js/marcos.js": "./js/marcos.js?v=010b079e85",
+  "./js/modelos.js": "./js/modelos.js?v=010b079e85",
+  "./js/mundo.js": "./js/mundo.js?v=010b079e85",
+  "./js/policia.js": "./js/policia.js?v=010b079e85",
+  "./js/racha.js": "./js/racha.js?v=010b079e85",
+  "./js/rival.js": "./js/rival.js?v=010b079e85",
+  "./js/transito.js": "./js/transito.js?v=010b079e85"
  }
 }
 </script>
@@ -316,6 +324,6 @@
   <div class="tq nitro" data-toque="nitro"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="13" y="16" width="14" height="24" rx="5"/><path d="M17 16v-4h6v4M20 8V5"/><path d="M33 34c4-3 6-7 4-12-1 3-3 4-4 4 1-4-1-7-3-9 0 5-4 7-4 11a5 5 0 0 0 7 6z" stroke-width="2.6"/></svg><small>nitro</small></div>
 </div>
 
-<script type="module" src="js/main.js?v=d4d7d9eed4"></script>
+<script type="module" src="js/main.js?v=010b079e85"></script>
 </body>
 </html>

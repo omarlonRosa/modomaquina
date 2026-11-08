@@ -1,23 +1,56 @@
 // Uno 1.6R: modelo, física arcade e som do motor.
 // Rumo (ang) = rotation.y; frente do carro = (sin ang, cos ang); +x local = lado esquerdo.
 import * as THREE from 'three';
+import { UNO } from './modelos.js';
 
-const ENTRE_EIXOS = 2.36;
-const RAIO_RODA = 0.286;
-const MARCHAS = [12.5, 21, 29.5, 38, 49];     // m/s no corte de cada marcha
-const CENTRO = 0.333;                          // meio do entre-eixos no modelo
+const MARCHAS = [12.5, 21, 29.5, 38, 49];     // m/s no corte de cada marcha (Uno; os outros esticam pela vmax)
 
 export class Carro {
   // opts.cor: pintura (o rival usa outra cor); opts.leve: sem luz de farol (o spot pesa no celular)
+  // gltf.ficha (modelos.js) traz o tamanho e o desempenho de fábrica; sem ficha é o Uno
   constructor(gltf, scene, opts = {}) {
     this.grupo = new THREE.Group();
     this.corpo = new THREE.Group();            // recebe rolagem e arfagem
     this.grupo.add(this.corpo);
-    const m = gltf.scene;
-    m.position.z = -CENTRO;
-    this.corpo.add(m);
     scene.add(this.grupo);
+    this.opts = opts;
+    this.montar(gltf, opts);
 
+    // farol: um spot só, para não pesar no celular
+    if (!opts.leve) {
+      const farol = new THREE.SpotLight(0xfff1d6, 160, 70, 0.62, 0.55, 1.4);
+      farol.position.set(0, 0.75, 1.9); farol.target.position.set(0, 0, 18);
+      this.grupo.add(farol, farol.target);
+    }
+    // chama do nitro no escapamento (traseira, lado direito)
+    const chama = new THREE.Group();
+    const cone = (r, l, cor, op) => new THREE.Mesh(new THREE.ConeGeometry(r, l, 10, 1, true).rotateX(-Math.PI / 2).translate(0, 0, -l / 2),
+      new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    chama.add(cone(0.12, 1.2, 0x1f5bff, 0.55), cone(0.06, 0.55, 0x9cc8ff, 0.6), cone(0.17, 0.75, 0xff6a10, 0.28));
+    chama.visible = false;
+    this.corpo.add(chama); this.chama = chama;
+    this.ajustarChama();
+    // brilho no chão à frente (barato e dá leitura de farol aceso)
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d'); const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    const poca = new THREE.Mesh(new THREE.PlaneGeometry(7, 14).rotateX(-Math.PI / 2).translate(0, 0.1, 9),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), color: 0xfff0d0, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.grupo.add(poca);
+    const fr = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.6).rotateX(-Math.PI / 2).translate(0, 0.1, -2.6),
+      new THREE.MeshBasicMaterial({ map: poca.material.map, color: 0xff2020, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.grupo.add(fr); this.brilhoFreio = fr.material;
+
+    this.reset(0, 0, 0);
+  }
+
+  montar(gltf, opts = {}) {
+    if (this.modelo) this.corpo.remove(this.modelo);
+    this.ficha = { ...UNO, ...(gltf.ficha || {}) };
+    const m = this.modelo = gltf.scene;
+    m.position.z = -this.ficha.centro;
+    this.corpo.add(m);
+    this.matsGaragem = null;                   // a garagem refaz as cópias de pintura e rodas
     this.rodas = [];
     for (const nome of ['roda_dianteira_esq', 'roda_dianteira_dir', 'roda_traseira_esq', 'roda_traseira_dir']) {
       const w = m.getObjectByName(nome);
@@ -48,34 +81,24 @@ export class Carro {
       });
     });
 
-    // farol: um spot só, para não pesar no celular
-    if (!opts.leve) {
-      const farol = new THREE.SpotLight(0xfff1d6, 160, 70, 0.62, 0.55, 1.4);
-      farol.position.set(0, 0.75, 1.9); farol.target.position.set(0, 0, 18);
-      this.grupo.add(farol, farol.target);
-    }
-    // chama do nitro no escapamento (traseira, lado direito)
-    this.grupo.updateMatrixWorld(true);
-    const caixa = new THREE.Box3().setFromObject(m);
-    const chama = new THREE.Group();
-    const cone = (r, l, cor, op) => new THREE.Mesh(new THREE.ConeGeometry(r, l, 10, 1, true).rotateX(-Math.PI / 2).translate(0, 0, -l / 2),
-      new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
-    chama.add(cone(0.12, 1.2, 0x1f5bff, 0.55), cone(0.06, 0.55, 0x9cc8ff, 0.6), cone(0.17, 0.75, 0xff6a10, 0.28));
-    chama.position.set(-0.42, 0.27, caixa.min.z - 0.02);
-    chama.visible = false;
-    this.corpo.add(chama); this.chama = chama;
-    // brilho no chão à frente (barato e dá leitura de farol aceso)
-    const c = document.createElement('canvas'); c.width = c.height = 128;
-    const g = c.getContext('2d'); const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-    gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
-    const poca = new THREE.Mesh(new THREE.PlaneGeometry(7, 14).rotateX(-Math.PI / 2).translate(0, 0.1, 9),
-      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), color: 0xfff0d0, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
-    this.grupo.add(poca);
-    const fr = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.6).rotateX(-Math.PI / 2).translate(0, 0.1, -2.6),
-      new THREE.MeshBasicMaterial({ map: poca.material.map, color: 0xff2020, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false }));
-    this.grupo.add(fr); this.brilhoFreio = fr.material;
+  }
 
-    this.reset(0, 0, 0);
+  // troca o carro (garagem, rival): mesma física e posição, outro modelo e outra ficha
+  trocarModelo(gltf, opts = this.opts) {
+    this.montar(gltf, opts);
+    this.ajustarChama();
+    this.atualizarModelo(0);
+  }
+
+  // escapamento: atrás do para-choque traseiro, medido no próprio modelo
+  ajustarChama() {
+    if (!this.chama) return;
+    const p = this.grupo.position.clone(), r = this.grupo.rotation.y;
+    this.grupo.position.set(0, 0, 0); this.grupo.rotation.y = 0; this.corpo.rotation.set(0, 0, 0);
+    this.grupo.updateMatrixWorld(true);
+    const caixa = new THREE.Box3().setFromObject(this.modelo);
+    this.grupo.position.copy(p); this.grupo.rotation.y = r; this.grupo.updateMatrixWorld(true);
+    this.chama.position.set(-Math.min(0.42, (caixa.max.x - caixa.min.x) * 0.25), 0.27, caixa.min.z - 0.02);
   }
 
   reset(x, z, ang) {
@@ -102,8 +125,9 @@ export class Carro {
     const naTerra = !info.rua || info.dist > info.rua.w / 2 + 2.2 || info.rua.terra;
     this.foraDaRua = naTerra;
     const M = this.mods || {};                                       // peças da garagem (garagem.js)
-    const vmax = (naTerra ? 30 : 49 + (M.vmax || 0)) * (1 - 0.2 * (this.avaria || 0));   // avariado no canteiro: perde velocidade
-    const aderencia = inp.mao ? 1.3 : (naTerra ? 4.2 : 9) * (M.grip || 1);
+    const F = this.ficha;
+    const vmax = (naTerra ? Math.min(30, F.vmax * 0.65) : F.vmax + (M.vmax || 0)) * (1 - 0.2 * (this.avaria || 0));   // avariado no canteiro: perde velocidade
+    const aderencia = inp.mao ? 1.3 : (naTerra ? 4.2 : 9) * (M.grip || 1) * F.grip;
 
     // nitro: empurrão forte e mais velocidade final enquanto tem no cilindro (uns 3 s cheio)
     const nitroOn = !!inp.nitro && this.nitro > 0.01 && vf > 2 && !inp.parado;
@@ -115,12 +139,12 @@ export class Carro {
     let ac = 0;
     if (inp.acel > 0) {
       if (vf < -0.5) ac = 11 * inp.acel;
-      else ac = inp.acel * (4.6 + (this.bonus || 0)) * (M.acel || 1) * Math.max(0, 1 - Math.pow(Math.max(vf, 0) / vmaxEf, 1.7)) * (naTerra ? 0.8 : 1);
+      else ac = inp.acel * (F.acel + (this.bonus || 0)) * (M.acel || 1) * Math.max(0, 1 - Math.pow(Math.max(vf, 0) / vmaxEf, 1.7)) * (naTerra ? 0.8 : 1);
     }
-    if (nitroOn) ac += 6.5 * Math.max(0, 1 - Math.max(vf, 0) / vmaxEf);
+    if (nitroOn) ac += 6.5 * (0.6 + 0.4 * F.acel / 4.6) * Math.max(0, 1 - Math.max(vf, 0) / vmaxEf);
     if (this.impulso > 0) { this.impulso -= dt; ac += 5; }        // largada perfeita
     if (inp.freio > 0) {
-      if (vf > 0.6) ac -= 11 * inp.freio * (M.freio || 1);
+      if (vf > 0.6) ac -= 11 * inp.freio * (M.freio || 1) * F.freio;
       else ac -= 3.4 * inp.freio * (vf > -9 ? 1 : 0);          // ré até ~32 km/h
     }
     if (!inp.acel && !inp.freio) ac -= Math.sign(vf) * Math.min(Math.abs(vf) / dt, 0.9 + Math.abs(vf) * 0.02);
@@ -132,7 +156,7 @@ export class Carro {
     const dMax = 0.62 / (1 + Math.abs(vf) * 0.055);
     const alvo = inp.dir * dMax + (this.avaria || 0) * 0.03 * Math.min(1, Math.abs(vf) / 8);   // suspensão torta puxa para a esquerda
     this.dir += (alvo - this.dir) * Math.min(1, dt * (inp.analogico ? 14 : 7));
-    let wAlvo = vf * Math.tan(this.dir) / ENTRE_EIXOS;
+    let wAlvo = vf * Math.tan(this.dir) / F.eixo;
     if (inp.mao && Math.abs(vf) > 7) wAlvo *= 1.7;
     this.w += (wAlvo - this.w) * Math.min(1, dt * (inp.mao ? 3 : 10));
 
@@ -153,10 +177,11 @@ export class Carro {
     // embalo: depois de subir no canteiro, segue por cima até sair do outro lado (os dois meios-fios)
     if (this.embalo > 0) this.embalo -= dt;
     const rapido = Math.abs(this.vf) > 22 || this.embalo > 0;
-    for (const off of [1.35, 0, -1.25]) {
+    const kL = F.L / 3.7, raio = 0.86 * Math.min(1.12, Math.max(1, F.W / 1.62));
+    for (const off of [1.35 * kL, 0, -1.25 * kL]) {
       const p = { x: this.pos.x + nf.x * off, z: this.pos.z + nf.y * off };
       const ox = p.x, oz = p.z;
-      const n = mundo.colidir(p, 0.86, rapido);
+      const n = mundo.colidir(p, raio, rapido);
       if (n) { this.pos.x += p.x - ox; this.pos.z += p.z - oz; bateu = n; }
     }
     if (bateu) {
@@ -188,10 +213,11 @@ export class Carro {
     this.acLong = (novoVf - this.vf) / dt;
     this.vf = novoVf; this.vl = this.vel.dot(ee);
     const v = Math.abs(this.vf);
-    let m = 0; while (m < MARCHAS.length - 1 && v > MARCHAS[m]) m++;
+    const kM = (F.vmax + (M.vmax || 0)) / 49, MG = MARCHAS.map(x => x * kM);
+    let m = 0; while (m < MG.length - 1 && v > MG[m]) m++;
     this.marcha = this.vf < -0.5 ? 'R' : m + 1;
-    const lo = m ? MARCHAS[m - 1] * 0.55 : 0;
-    const rpmAlvo = 900 + Math.max(0, (v - lo) / (MARCHAS[m] - lo)) * 5900 * (m ? 1 : 1) + (inp.acel && v < 2 ? 2200 * inp.acel : 0);
+    const lo = m ? MG[m - 1] * 0.55 : 0;
+    const rpmAlvo = 900 + Math.max(0, (v - lo) / (MG[m] - lo)) * 5900 * (m ? 1 : 1) + (inp.acel && v < 2 ? 2200 * inp.acel : 0);
     this.rpm += (Math.min(7000, rpmAlvo) - this.rpm) * Math.min(1, dt * 8);
     this.derrapando = Math.min(1, Math.max(0, (Math.abs(this.vl) - 2.2) / 6)) * (v > 4 ? 1 : 0);
     this.freando = inp.freio > 0 && this.vf > 0.5;
@@ -206,7 +232,7 @@ export class Carro {
     this.rol += (THREE.MathUtils.clamp(-lat * 0.006, -0.06, 0.06) - this.rol) * Math.min(1, dt * 6);
     this.arf += (THREE.MathUtils.clamp(-(this.acLong || 0) * 0.004, -0.035, 0.035) - this.arf) * Math.min(1, dt * 5);
     this.corpo.rotation.z = this.rol; this.corpo.rotation.x = this.arf;
-    this.giro += (this.vf || 0) / RAIO_RODA * dt;
+    this.giro += (this.vf || 0) / this.ficha.r * dt;
     for (const r of this.rodas) {
       r.w.rotation.x = this.giro;
       if (r.frente) r.piv.rotation.y = this.dir;
@@ -258,10 +284,10 @@ export class Som {
   }
   update(carro, acel) {
     if (!this.ok) return;
-    const t = this.ctx.currentTime, f = carro.rpm / 60 * 2;
+    const t = this.ctx.currentTime, cil = (carro.ficha && carro.ficha.cil) || 4, f = carro.rpm / 60 * cil / 2;
     this.o1.frequency.setTargetAtTime(f, t, 0.03);
     this.o2.frequency.setTargetAtTime(f / 2, t, 0.03);
-    this.filtro.frequency.setTargetAtTime(380 + carro.rpm * 0.28 + acel * 500, t, 0.05);
+    this.filtro.frequency.setTargetAtTime((380 + carro.rpm * 0.28 + acel * 500) * (cil > 4 ? 1.35 : 1), t, 0.05);
     this.gMotor.gain.setTargetAtTime(0.07 + acel * 0.09 + (carro.nitroAtivo ? 0.05 : 0), t, 0.05);
     this.nitro(!!carro.nitroAtivo);
     this.gPneu.gain.setTargetAtTime(carro.derrapando * 0.22, t, 0.05);
