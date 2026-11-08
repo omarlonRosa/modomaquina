@@ -8,7 +8,8 @@ const MARCHAS = [12.5, 21, 29.5, 38, 49];     // m/s no corte de cada marcha
 const CENTRO = 0.333;                          // meio do entre-eixos no modelo
 
 export class Carro {
-  constructor(gltf, scene) {
+  // opts.cor: pintura (o rival usa outra cor); opts.leve: sem luz de farol (o spot pesa no celular)
+  constructor(gltf, scene, opts = {}) {
     this.grupo = new THREE.Group();
     this.corpo = new THREE.Group();            // recebe rolagem e arfagem
     this.grupo.add(this.corpo);
@@ -38,15 +39,31 @@ export class Carro {
           mt.emissive = new THREE.Color(0xfff4dd); mt.emissiveIntensity = mt.name === 'lensF' ? 2.2 : 0.6; this.farois.push(mt);
         }
         if (mt.map) mt.map.anisotropy = 4;
+        if (opts.cor && mt.name === 'paint') {
+          const c = mt.clone(); c.color = new THREE.Color(opts.cor);
+          if (Array.isArray(o.material)) o.material[i] = c; else o.material = c;
+        }
         // partes da lataria vieram com faces invertidas (as laterais do teto sumiam vistas de cima)
         if (['paint', 'grafite', 'plastic', 'chrome'].includes(mt.name)) mt.side = THREE.DoubleSide;
       });
     });
 
     // farol: um spot só, para não pesar no celular
-    const farol = new THREE.SpotLight(0xfff1d6, 160, 70, 0.62, 0.55, 1.4);
-    farol.position.set(0, 0.75, 1.9); farol.target.position.set(0, 0, 18);
-    this.grupo.add(farol, farol.target);
+    if (!opts.leve) {
+      const farol = new THREE.SpotLight(0xfff1d6, 160, 70, 0.62, 0.55, 1.4);
+      farol.position.set(0, 0.75, 1.9); farol.target.position.set(0, 0, 18);
+      this.grupo.add(farol, farol.target);
+    }
+    // chama do nitro no escapamento (traseira, lado direito)
+    this.grupo.updateMatrixWorld(true);
+    const caixa = new THREE.Box3().setFromObject(m);
+    const chama = new THREE.Group();
+    const cone = (r, l, cor, op) => new THREE.Mesh(new THREE.ConeGeometry(r, l, 10, 1, true).rotateX(-Math.PI / 2).translate(0, 0, -l / 2),
+      new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    chama.add(cone(0.12, 1.2, 0x1f5bff, 0.55), cone(0.06, 0.55, 0x9cc8ff, 0.6), cone(0.17, 0.75, 0xff6a10, 0.28));
+    chama.position.set(-0.42, 0.27, caixa.min.z - 0.02);
+    chama.visible = false;
+    this.corpo.add(chama); this.chama = chama;
     // brilho no chão à frente (barato e dá leitura de farol aceso)
     const c = document.createElement('canvas'); c.width = c.height = 128;
     const g = c.getContext('2d'); const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
@@ -62,6 +79,8 @@ export class Carro {
   }
 
   reset(x, z, ang) {
+    if (this.nitro === undefined) this.nitro = 1;
+    this.nitroAtivo = false; this.impulso = 0; this.bonus = 0;
     this.pos = new THREE.Vector3(x, 0, z);
     this.vel = new THREE.Vector2(0, 0);   // (x, z) no mundo
     this.ang = ang; this.w = 0; this.dir = 0;
@@ -83,12 +102,20 @@ export class Carro {
     const vmax = (naTerra ? 30 : 49) * (1 - 0.2 * (this.avaria || 0));   // avariado no canteiro: perde velocidade
     const aderencia = inp.mao ? 1.3 : naTerra ? 4.2 : 9;
 
+    // nitro: empurrão forte e mais velocidade final enquanto tem no cilindro (uns 3 s cheio)
+    const nitroOn = !!inp.nitro && this.nitro > 0.01 && vf > 2 && !inp.parado;
+    if (nitroOn) this.nitro = Math.max(0, this.nitro - dt / 3);
+    else this.nitro = Math.min(1, this.nitro + dt * (0.03 + (this.derrapando || 0) * 0.12));   // recarrega devagar, mais rápido derrapando
+    this.nitroAtivo = nitroOn;
+    const vmaxEf = vmax + (nitroOn ? 14 : 0);
     // motor, freio e ré
     let ac = 0;
     if (inp.acel > 0) {
       if (vf < -0.5) ac = 11 * inp.acel;
-      else ac = inp.acel * 4.6 * Math.max(0, 1 - Math.pow(Math.max(vf, 0) / vmax, 1.7)) * (naTerra ? 0.8 : 1);
+      else ac = inp.acel * (4.6 + (this.bonus || 0)) * Math.max(0, 1 - Math.pow(Math.max(vf, 0) / vmaxEf, 1.7)) * (naTerra ? 0.8 : 1);
     }
+    if (nitroOn) ac += 6.5 * Math.max(0, 1 - Math.max(vf, 0) / vmaxEf);
+    if (this.impulso > 0) { this.impulso -= dt; ac += 5; }        // largada perfeita
     if (inp.freio > 0) {
       if (vf > 0.6) ac -= 11 * inp.freio;
       else ac -= 3.4 * inp.freio * (vf > -9 ? 1 : 0);          // ré até ~32 km/h
@@ -112,6 +139,7 @@ export class Carro {
     vf -= Math.sign(vf) * Math.min(Math.abs(vf), Math.abs(vlAntes - vl) * 0.35);
     this.vel.set(f.x * vf + e.x * vl, f.y * vf + e.y * vl);
 
+    if (inp.parado) { this.vel.set(0, 0); this.w = 0; }          // contagem da largada: segura o carro, mas deixa acelerar o motor
     this.ang += this.w * dt;
     this.pos.x += this.vel.x * dt; this.pos.z += this.vel.y * dt;
 
@@ -180,6 +208,10 @@ export class Carro {
       r.w.rotation.x = this.giro;
       if (r.frente) r.piv.rotation.y = this.dir;
     }
+    if (this.chama) {
+      this.chama.visible = !!this.nitroAtivo;
+      if (this.nitroAtivo) { const k = 0.8 + Math.random() * 0.45; this.chama.scale.set(1, 1, k); }
+    }
     const fr = this.freando ? 2.8 : 0.5;
     for (const l of this.lanternas) l.emissiveIntensity = fr;
     if (this.brilhoFreio) this.brilhoFreio.opacity = this.freando ? 0.5 : 0.12;
@@ -192,9 +224,14 @@ export class Carro {
 export class Som {
   constructor() { this.ok = false; this.mudo = false; }
   iniciar() {
-    if (this.ok) { this.ctx.resume(); return; }
+    // iPhone: no modo silencioso o Safari corta o áudio da web; como "playback" (igual vídeo/música) ele toca
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    if (this.ok) { if (this.ctx.state !== 'running') this.ctx.resume(); return; }
     const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
     const ctx = this.ctx = new C();
+    // iOS antigo: um bip mudo dentro do toque destrava o áudio
+    try { const b = ctx.createBuffer(1, 1, 22050), src = ctx.createBufferSource(); src.buffer = b; src.connect(ctx.destination); src.start(0); } catch (e) {}
+    if (ctx.state !== 'running') ctx.resume();
     this.master = ctx.createGain(); this.master.gain.value = 0.55; this.master.connect(ctx.destination);
     const filtro = this.filtro = ctx.createBiquadFilter(); filtro.type = 'lowpass'; filtro.frequency.value = 600; filtro.Q.value = 2;
     const dist = ctx.createWaveShaper(); const k = 18, curva = new Float32Array(256);
@@ -222,9 +259,24 @@ export class Som {
     this.o1.frequency.setTargetAtTime(f, t, 0.03);
     this.o2.frequency.setTargetAtTime(f / 2, t, 0.03);
     this.filtro.frequency.setTargetAtTime(380 + carro.rpm * 0.28 + acel * 500, t, 0.05);
-    this.gMotor.gain.setTargetAtTime(0.07 + acel * 0.09, t, 0.05);
+    this.gMotor.gain.setTargetAtTime(0.07 + acel * 0.09 + (carro.nitroAtivo ? 0.05 : 0), t, 0.05);
+    this.nitro(!!carro.nitroAtivo);
     this.gPneu.gain.setTargetAtTime(carro.derrapando * 0.22, t, 0.05);
     this.master.gain.setTargetAtTime(this.mudo ? 0 : 0.55, t, 0.05);
+  }
+  // chiado do nitro: ruído agudo enquanto ligado, com um "tssss" de abertura
+  nitro(ligado) {
+    if (!this.ok) return;
+    if (!this.gNitro) {
+      const n = this.ctx.createBufferSource(); n.buffer = this.ruido; n.loop = true;
+      const hp = this.ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2600;
+      this.gNitro = this.ctx.createGain(); this.gNitro.gain.value = 0;
+      n.connect(hp); hp.connect(this.gNitro); this.gNitro.connect(this.master); n.start();
+    }
+    const t = this.ctx.currentTime;
+    if (ligado && !this.nitroLigado) { this.gNitro.gain.cancelScheduledValues(t); this.gNitro.gain.setValueAtTime(0.32, t); this.gNitro.gain.setTargetAtTime(0.13, t + 0.05, 0.2); }
+    if (!ligado && this.nitroLigado) this.gNitro.gain.setTargetAtTime(0, t, 0.12);
+    this.nitroLigado = ligado;
   }
   batida(forca) {
     if (!this.ok || this.mudo) return;

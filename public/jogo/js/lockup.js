@@ -178,7 +178,10 @@ export function criarLockup(lock, mundo, scene) {
 
   // ponto de partida: dentro do galpão, de frente para o portão
   const ini = W(-2.6, -1.5);
-  return { grupo: g, inicio: { x: ini[0], z: ini[1], ang: lock.ang } };
+  // racha contra o rival: lado a lado no portão (o rival do lado de dentro da curva da saída)
+  const j = W(-5.0, 0.5), rv = W(-0.6, 0.5);
+  return { grupo: g, inicio: { x: ini[0], z: ini[1], ang: lock.ang },
+    largada: { jogador: { x: j[0], z: j[1], ang: lock.ang }, rival: { x: rv[0], z: rv[1], ang: lock.ang } } };
 }
 
 // área ocupada pela oficina e pelo pátio (para tirar prédios do mapa que caem em cima)

@@ -121,6 +121,7 @@ export class Racha {
     // na pista de mão única (PA-160) ficam no meio da pista
     const desl0 = p.map(([x, z]) => { const i = mundo ? mundo.infoRua(x, z, 12) : null; return i && i.rua && !i.rua.mao && i.dist < 3 ? i.rua.w / 4 : 0; });
     const desl = desl0.map((_, i) => { let s = 0, k = 0; for (let j = Math.max(0, i - 3); j <= Math.min(n - 1, i + 3); j++) { s += desl0[j]; k++; } return s / k; });
+    this.desl = desl;
     const pos = new Float32Array(n * 2 * 3), uv = new Float32Array(n * 2 * 2), idx = [];
     for (let i = 0; i < n; i++) {
       const a = p[Math.max(0, i - 1)], b = p[Math.min(n - 1, i + 1)];
@@ -148,11 +149,15 @@ export class Racha {
   get prox() { return this.i; }
 
   // o que o minimapa precisa para desenhar a rota
-  infoMapa() { return { pontos: this.pontos, prox: this.i, rota: this.rota, iRota: this.iRota }; }
+  infoMapa() { return { pontos: this.pontos, prox: this.i, rota: this.rota, iRota: this.iRota, rival: this.rival && this.rival.ativo ? this.rival.carro.pos : null }; }
 
-  iniciar(hud, controles, aoTerminar) {
+  // opcoes.rival: corre contra o rival (rival.js); sem ele é contra o relógio
+  iniciar(hud, controles, aoTerminar, opcoes = {}) {
     this.i = 0; this.t = 0; this.ativo = true; this.contagem = 3.5; this.fim = aoTerminar; this.contou = false;
-    this.iRota = 0; this.setaAng = 0;
+    this.iRota = 0; this.setaAng = 0; this.sJogador = 0;
+    this.rival = opcoes.rival || null; this.tempoRival = null;
+    this.el.pos = this.el.pos || document.getElementById('posicao');
+    this.el.pos.classList.toggle('on', !!this.rival);
     this.hud = hud; this.controles = controles; controles.travado = true;
     this.el.painel.classList.add('on');
     this.seta.visible = true; this.faixa.visible = true;
@@ -161,6 +166,8 @@ export class Racha {
 
   parar() {
     this.ativo = false; this.portal.visible = false; this.el.painel.classList.remove('on');
+    if (this.el.pos) this.el.pos.classList.remove('on');
+    if (this.rival) this.rival.parar();
     this.seta.visible = false; this.faixa.visible = false;
     if (this.controles) this.controles.travado = false;
   }
@@ -172,8 +179,19 @@ export class Racha {
     this.el.cp.textContent = `Ponto ${this.i + 1} de ${this.pontos.length}`;
   }
 
-  // em que ponto da rota o carro está (procura só perto do último, para não pular de trecho)
-  acompanhar(x, z) {
+  acompanhar(x, z) { return this.progresso(this, x, z); }
+
+  // ponto da rota na faixa da direita (nas ruas de mão dupla), para o rival dirigir na mão certa
+  pontoFaixa(s) {
+    const [x, z] = this.pontoNa(s), [x2, z2] = this.pontoNa(s + 2);
+    const dx = x2 - x, dz = z2 - z, L = Math.hypot(dx, dz) || 1;
+    const k = Math.min(this.rotaS.length - 1, Math.max(0, Math.round(s / PASSO_ROTA)));
+    const d = this.desl ? this.desl[k] : 0;
+    return [x - dz / L * d, z + dx / L * d];
+  }
+
+  // em que ponto da rota está um carro (est guarda iRota/distRota; procura perto do último, sem pular de trecho)
+  progresso(est, x, z) {
     const p = this.rota, n = p.length;
     const busca = (de, ate) => {
       let melhor = -1, dm = Infinity;
@@ -186,9 +204,9 @@ export class Racha {
       }
       return [melhor, dm];
     };
-    let [i, d] = busca(Math.floor(this.iRota) - 4, Math.floor(this.iRota) + 40);
+    let [i, d] = busca(Math.floor(est.iRota) - 4, Math.floor(est.iRota) + 40);
     if (d > 45) { const [i2, d2] = busca(0, n); if (d2 < d) [i, d] = [i2, d2]; }
-    this.iRota = i; this.distRota = d;
+    est.iRota = i; est.distRota = d;
     const k = Math.floor(i);
     return this.rotaS[k] + (this.rotaS[Math.min(k + 1, n - 1)] - this.rotaS[k]) * (i - k);
   }
@@ -206,6 +224,7 @@ export class Racha {
 
   guiar(dt, carro) {
     const sCarro = this.acompanhar(carro.pos.x, carro.pos.z);
+    this.sJogador = sCarro;
     // seta: aponta para um ponto mais à frente na rota (mais longe quanto mais rápido)
     // perto de uma curva (uns 55 m, mais em alta), aponta para a rua de saída dela
     const ver = 22 + Math.min(30, Math.abs(carro.vf || 0) * 0.7);
@@ -257,7 +276,9 @@ export class Racha {
     }
   }
 
-  update(dt, carro) {
+  get largando() { return this.ativo && this.contagem > 0.5; }
+
+  update(dt, carro, inp = {}) {
     if (!this.ativo) return;
     this.portal.rotation.y += dt * 0.8;
     this.guiar(dt, carro);
@@ -265,12 +286,26 @@ export class Racha {
       const antes = Math.ceil(this.contagem - 0.5);
       this.contagem -= dt;
       const agora = Math.ceil(this.contagem - 0.5);
-      if (agora !== antes || !this.contou) { this.hud.aviso(agora > 0 ? String(agora) : 'VAI!', agora > 0 ? 0.9 : 1.2); this.contou = true; }
+      if (agora !== antes || !this.contou) {
+        let txt = agora > 0 ? String(agora) : 'VAI!';
+        // largada perfeita: motor cheio na hora do VAI (acelerando durante a contagem)
+        if (agora === 0 && (inp.acel || 0) > 0.85) { carro.impulso = 0.8; txt = 'LARGADA PERFEITA!'; }
+        if (agora === 0 && this.rival && Math.random() < 0.55) this.rival.carro.impulso = 0.6;
+        this.hud.aviso(txt, agora > 0 ? 0.9 : 1.3); this.contou = true;
+      }
       if (this.contagem <= 0.5) this.controles.travado = false;
       if (this.contagem > 0.5) { this.el.tempo.textContent = fmt(0); return; }
     }
     this.t += dt;
     this.el.tempo.textContent = fmt(this.t);
+    if (this.rival) {
+      const r = this.rival;
+      if (!r.chegou && r.s >= this.total - 6) { r.chegou = true; this.tempoRival = this.t; this.hud.aviso(`${r.nome} cruzou a chegada!`, 2); }
+      const frente = r.chegou || r.s > this.sJogador + 1;
+      const gap = Math.round(Math.abs(r.s - this.sJogador));
+      const txt = frente ? `2º · ${r.nome} ${r.chegou ? 'chegou' : '+' + gap + ' m'}` : `1º · ${r.nome} −${gap} m`;
+      if (txt !== this.posAntes) { this.posAntes = txt; this.el.pos.textContent = txt; this.el.pos.classList.toggle('atras', frente); }
+    }
     const p = this.pontos[this.i];
     if (Math.hypot(p[0] - carro.pos.x, p[1] - carro.pos.z) < RAIO_PONTO) {
       this.i++;
@@ -285,8 +320,18 @@ export class Racha {
     try { recorde = parseFloat(localStorage.getItem('racha-lockup-recorde-v2')); } catch {}
     const novo = !recorde || tempo < recorde;
     if (novo) try { localStorage.setItem('racha-lockup-recorde-v2', String(tempo)); } catch {}
+    // contra o rival: quem cruzou primeiro e a grana pro caixa da garagem
+    let posicao = null, premio = 0, tRival = null;
+    if (this.rival) {
+      posicao = this.tempoRival === null ? 1 : 2;
+      tRival = this.tempoRival === null ? null : fmt(this.tempoRival);
+      premio = posicao === 1 ? 300 : 50;
+    }
+    let grana = 0;
+    try { grana = (parseInt(localStorage.getItem('racha-grana')) || 0) + premio; if (premio) localStorage.setItem('racha-grana', String(grana)); } catch {}
+    const nome = this.rival ? this.rival.nome : null;
     this.parar();
-    this.fim({ tempo: fmt(tempo), recorde: novo ? null : fmt(recorde), novo, metros: this.dados.metros });
+    this.fim({ tempo: fmt(tempo), recorde: novo ? null : fmt(recorde), novo, metros: this.dados.metros, posicao, premio, grana, rival: nome, tRival });
   }
 }
 

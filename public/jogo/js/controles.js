@@ -1,12 +1,12 @@
 // Teclado (WASD/setas, espaço = freio de mão) e botões de toque para celular.
 // As teclas são "liga/desliga"; ler() transforma isso em volante, acelerador e freio
 // que sobem e descem aos poucos, como um controle analógico.
-const BOTOES = ['esq', 'dir', 'acel', 'freio', 'mao'];
+const BOTOES = ['esq', 'dir', 'acel', 'freio', 'mao', 'nitro'];
 
 export class Controles {
   constructor() {
     this.teclas = new Set();
-    this.toque = { esq: false, dir: false, acel: false, freio: false, mao: false };
+    this.toque = { esq: false, dir: false, acel: false, freio: false, mao: false, nitro: false };
     this.travado = false;
     this.acoes = {};
     this.v = 0; this.a = 0; this.f = 0;   // volante (-1..1), acelerador e freio (0..1) já suavizados
@@ -35,7 +35,7 @@ export class Controles {
     this.elsToque = els;
     const ehBotao = t => t && t.closest && t.closest('button, a, input, select');
     const atualizar = e => {
-      const novo = { esq: false, dir: false, acel: false, freio: false, mao: false };
+      const novo = { esq: false, dir: false, acel: false, freio: false, mao: false, nitro: false };
       for (const t of e.touches) {
         const k = this.botaoEm(t.clientX, t.clientY);
         if (k) novo[k] = true;
@@ -52,6 +52,7 @@ export class Controles {
     }, opc);
     document.addEventListener('touchmove', e => { e.preventDefault(); atualizar(e); }, opc);
     const fim = e => {
+      if (this.acoes.primeiroToque) this.acoes.primeiroToque();
       // segundo toque rápido no mesmo lugar = zoom no Safari; corta, menos em botões do menu
       const agora = performance.now();
       if (!ehBotao(e.target) && agora - ultimoFim < 350) e.preventDefault();
@@ -90,8 +91,9 @@ export class Controles {
     const freio = (t.has('KeyS') || t.has('ArrowDown') || q.freio) ? 1 : 0;
     const dir = ((t.has('KeyA') || t.has('ArrowLeft') || q.esq) ? 1 : 0) - ((t.has('KeyD') || t.has('ArrowRight') || q.dir) ? 1 : 0);
     const mao = t.has('Space') || q.mao;
-    // travado (contagem da largada): segura no freio de mão. Freio comum com o carro parado vira ré!
-    if (this.travado) { this.v = 0; this.a = 0; this.f = 0; return { acel: 0, freio: 0, dir: 0, mao: true }; }
+    const nitro = t.has('ShiftLeft') || t.has('ShiftRight') || t.has('KeyN') || q.nitro;
+    // travado (contagem da largada): o carro fica parado, mas dá para acelerar o motor (largada perfeita)
+    if (this.travado) { this.v = 0; this.f = 0; this.a = chegar(this.a, acel, (acel ? 4 : 8) * dt); return { acel: this.a, freio: 0, dir: 0, mao: false, nitro: false, parado: true }; }
 
     // volante: vai girando (uns 0,35 s até o fim parado, ~0,8 s a 120 km/h) e volta ao centro mais rápido
     // no toque é ainda mais manso (~0,6 s até o fim parado, ~1,3 s a 120 km/h): o polegar não dosa como a tecla
@@ -108,7 +110,7 @@ export class Controles {
     // curva suave: pouco volante perto do centro, total no fim
     let v = Math.sign(this.v) * Math.pow(Math.abs(this.v), toque ? 1.7 : 1.4);
     if (toque) v *= 1 - Math.min(0.3, Math.abs(kmh) / 330);     // em alta, no toque, não chega a esterçar tudo
-    return { acel: this.a, freio: this.f, dir: v, mao, analogico: true };
+    return { acel: this.a, freio: this.f, dir: v, mao, nitro, analogico: true };
   }
 }
 

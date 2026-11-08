@@ -6,7 +6,7 @@ export class Hud {
     this.el = {
       vel: document.getElementById('vel'), marcha: document.getElementById('marcha'),
       rua: document.getElementById('rua'), aviso: document.getElementById('aviso'),
-      mini: document.getElementById('mini'),
+      mini: document.getElementById('mini'), nitro: document.querySelector('#nitro i'),
     };
     this.ruaAtual = ''; this.ruaTempo = 0; this.avisoTempo = 0;
     const R = mapa.raio + 100;
@@ -38,6 +38,10 @@ export class Hud {
   update(dt, carro, rota) {
     this.el.vel.textContent = Math.round(carro.kmh);
     this.el.marcha.textContent = carro.marcha;
+    if (this.el.nitro) {
+      const n = Math.round((carro.nitro || 0) * 100);
+      if (n !== this.nitroAntes) { this.nitroAntes = n; this.el.nitro.style.width = n + '%'; }
+    }
     const nome = carro.rua && !carro.foraDaRua ? carro.rua.n : '';
     if (nome && nome !== this.ruaAtual) { this.ruaAtual = nome; this.el.rua.textContent = nome; this.el.rua.classList.add('on'); this.ruaTempo = 3; }
     if (this.ruaTempo > 0 && (this.ruaTempo -= dt) <= 0) this.el.rua.classList.remove('on');
@@ -61,6 +65,10 @@ export class Hud {
       g.strokeStyle = '#ffa21f'; g.lineWidth = 5.5; traco();
       const fim = rota.rota[rota.rota.length - 1];
       { const [x, z] = this.P(...fim); g.fillStyle = '#40ff70'; g.strokeStyle = '#000'; g.lineWidth = 2; g.beginPath(); g.arc(x - cx, z - cz, 7, 0, 7); g.fill(); g.stroke(); }
+      if (rota.rival) {   // rival: bolinha vermelha
+        const [x, z] = this.P(rota.rival.x, rota.rival.z);
+        g.fillStyle = '#ff3b30'; g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(x - cx, z - cz, 6, 0, 7); g.fill(); g.stroke();
+      }
       const p = rota.pontos[rota.prox];
       if (p) { const [x, z] = this.P(...p); g.fillStyle = '#fff'; g.strokeStyle = '#ffa21f'; g.lineWidth = 2.5; g.beginPath(); g.arc(x - cx, z - cz, 5, 0, 7); g.fill(); g.stroke(); }
     }

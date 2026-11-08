@@ -7,6 +7,7 @@ import { Carro, Som } from './carro.js';
 import { Controles } from './controles.js';
 import { Hud } from './hud.js';
 import { Racha } from './racha.js';
+import { Rival, colisaoCarros } from './rival.js';
 
 const celular = matchMedia('(pointer: coarse)').matches;
 document.body.classList.toggle('toque', celular);
@@ -71,7 +72,7 @@ async function baixar(url, peso, base) {
   return out.buffer;
 }
 
-let mundo, carro, hud, racha, lockup, som, controles;
+let mundo, carro, hud, racha, lockup, som, controles, rival;
 let modo = 'menu', camModo = 0, vidros = [];
 const CAMS = [{ d: 5.4, h: 2.0, olhar: 1.0 }, { d: 9, h: 3.8, olhar: 1.2 }, { d: -0.35, h: 1.12, olhar: 1.0, dentro: true }];
 
@@ -88,6 +89,7 @@ async function iniciar() {
   // texturas como <img> (blob: liberado em img-src) e não por fetch, que a CSP do site bloqueia em connect-src
   const loader = new GLTFLoader().register(parser => { parser.textureLoader = new THREE.TextureLoader(parser.options.manager); return { name: 'texturas_por_img' }; });
   const gltf = await loader.parseAsync(glb, '');
+  const gltfRival = { scene: gltf.scene.clone(true) };        // cópia antes do Carro mexer na hierarquia
   carro = new Carro(gltf, scene);
   // vidros: o insulfilm do modelo (quase preto) deixa a visão do motorista toda escura; por dentro ficam claros
   vidros = [];
@@ -96,6 +98,8 @@ async function iniciar() {
   controles = new Controles();
   hud = new Hud(mapa, mapa.lockup, mundo.lotes.concat(areasMarcos(mapa.lockup).slice(0, 2).map(p => ({ p }))));
   racha = new Racha(mapa.racha, scene, mundo);
+  rival = new Rival(gltfRival, scene, racha);
+  mostrarGrana();
   som = new Som();
   carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
   posicionarCamera(1, true);
@@ -116,15 +120,28 @@ function ligarAcoes() {
     menu.classList.remove('on'); fim.classList.remove('on');
     document.body.classList.add('jogando');
     carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
-    if (tipo === 'racha') {
+    racha.parar();
+    if (tipo === 'racha' || tipo === 'relogio') {
       modo = 'racha';
+      const contra = tipo === 'racha';
+      if (contra) {
+        const L = lockup.largada;
+        carro.reset(L.jogador.x, L.jogador.z, L.jogador.ang);
+        rival.iniciar(L.rival.x, L.rival.z, L.rival.ang);
+      }
+      carro.nitro = 1; carro.avaria = 0;
       racha.iniciar(hud, controles, (r) => {
         modo = 'livre';
+        document.getElementById('fim-titulo').textContent = r.posicao === 1 ? 'Você ganhou!' : r.posicao === 2 ? `${r.rival} ganhou` : 'Chegada';
         document.getElementById('fim-tempo').textContent = r.tempo;
-        document.getElementById('fim-recorde').textContent = r.novo ? 'Novo recorde neste aparelho!' : `Seu recorde: ${r.recorde}`;
+        document.getElementById('fim-recorde').textContent = r.posicao === 2 ? `${r.rival} fez ${r.tRival}` : r.novo ? 'Novo recorde neste aparelho!' : `Seu recorde: ${r.recorde}`;
         document.getElementById('fim-dist').textContent = `${(r.metros / 1000).toFixed(1).replace('.', ',')} km saindo da Lock-Up`;
+        document.getElementById('fim-grana').textContent = r.premio ? `+ R$ ${r.premio} pro caixa da garagem · caixa: R$ ${r.grana}` : '';
+        document.querySelector('#fim [data-acao=racha]').textContent = r.posicao === 2 ? 'Revanche' : 'Correr de novo';
+        mostrarGrana();
+        document.getElementById('aviso').classList.remove('on');
         fim.classList.add('on');
-      });
+      }, contra ? { rival } : {});
     } else {
       modo = 'livre'; racha.parar();
       hud.aviso('Saindo da Lock-Up Auto Center', 3);
@@ -133,6 +150,7 @@ function ligarAcoes() {
   controles.acoes = {
     livre: () => jogar('livre'),
     racha: () => jogar('racha'),
+    relogio: () => jogar('relogio'),
     camera: () => { camModo = (camModo + 1) % CAMS.length; },
     som: () => { som.iniciar(); som.mudo = !som.mudo; document.querySelector('[data-acao=som]').classList.toggle('mudo', som.mudo); },
     reset: () => {
@@ -147,8 +165,13 @@ function ligarAcoes() {
       racha.parar(); modo = 'menu'; som.pausar();
       document.body.classList.remove('jogando'); fim.classList.remove('on'); menu.classList.add('on');
     },
-    primeiroToque: () => som.iniciar(),
+    primeiroToque: () => { if (modo !== 'menu') som.iniciar(); },   // no menu fica quieto; o clique de jogar já liga o som
   };
+}
+
+function mostrarGrana() {
+  let g = 0; try { g = parseInt(localStorage.getItem('racha-grana')) || 0; } catch {}
+  const el = document.getElementById('grana'); if (el) el.textContent = g ? `Caixa da garagem: R$ ${g}` : '';
 }
 
 const alvoCam = new THREE.Vector3(), olharCam = new THREE.Vector3(), olharSuave = new THREE.Vector3();
@@ -180,15 +203,16 @@ function posicionarCamera(dt, instantaneo) {
     const p = { x: camera.position.x, z: camera.position.z };
     if (mundo.colidir(p, 0.4)) { camera.position.x = p.x; camera.position.z = p.z; }
   }
+  if (carro.nitroAtivo && !c.dentro) camera.position.add(new THREE.Vector3((Math.random() - 0.5) * 0.05, (Math.random() - 0.5) * 0.05, 0));
   if (carro.choque > 0) camera.position.add(new THREE.Vector3((Math.random() - 0.5), (Math.random() - 0.5), (Math.random() - 0.5)).multiplyScalar(carro.choque * 0.25));
   camera.lookAt(olharSuave);
   // tela larga (celular deitado) com o mesmo ângulo vertical deixava o carro miúdo: fecha o ângulo
   const largura = Math.min(1, Math.max(0, (camera.aspect - 1.5) / 0.7));
-  const fov = (c.dentro ? 70 : 60) - largura * 10 + Math.min(12, carro.kmh / 14);
-  if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * Math.min(1, dt * 3); camera.updateProjectionMatrix(); }
+  const fov = (c.dentro ? 70 : 60) - largura * 10 + Math.min(12, carro.kmh / 14) + (carro.nitroAtivo ? 11 : 0);
+  if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * Math.min(1, dt * (carro.nitroAtivo ? 7 : 3)); camera.updateProjectionMatrix(); }
 }
 
-let ultimo = 0, acc = 0, choqueAntes = 0, fpsT = 0, fpsN = 0;
+let ultimo = 0, acc = 0, choqueAntes = 0, fpsT = 0, fpsN = 0, nitroAntes = false;
 const PASSO = 1 / 120;
 function loop(t) {
   requestAnimationFrame(loop);
@@ -197,7 +221,13 @@ function loop(t) {
   const inp = modo === 'menu' ? { acel: 0, freio: 0, dir: 0, mao: false } : controles.ler(dt, carro.kmh);
   if (modo !== 'menu') {
     acc += dt;
-    while (acc >= PASSO) { carro.update(PASSO, inp, mundo); acc -= PASSO; }
+    const rInp = rival.ativo ? rival.pensar(dt, racha.sJogador || 0, racha.largando) : null;
+    while (acc >= PASSO) {
+      carro.update(PASSO, inp, mundo);
+      if (rInp) { rival.carro.update(PASSO, rInp, mundo); colisaoCarros(carro, rival.carro); }
+      acc -= PASSO;
+    }
+    if (carro.nitroAtivo !== nitroAntes) { nitroAntes = carro.nitroAtivo; document.body.classList.toggle('nitro', nitroAntes); }
     if (carro.evento === 'canteiro') {
       hud.aviso(carro.avaria >= 2 ? 'Foi a junta homocinética! (R conserta)' : 'Pancada no canteiro! Suspensão avariada', 2.6);
       carro.evento = null;
@@ -205,7 +235,7 @@ function loop(t) {
     if (carro.choque > choqueAntes + 0.15) som.batida(carro.choque);
     choqueAntes = carro.choque;
     racha.camDentro = !!CAMS[camModo].dentro;
-    racha.update(dt, carro);
+    racha.update(dt, carro, inp);
     hud.update(dt, carro, racha.ativo ? racha.infoMapa() : null);
     som.update(carro, inp.acel);
   } else carro.atualizarModelo(dt);
@@ -244,11 +274,15 @@ function telaCheia() {
 document.addEventListener('visibilitychange', () => { if (document.hidden && som) som.pausar(); else if (som && modo !== 'menu') som.iniciar(); });
 
 iniciar().catch(e => { console.error(e); progresso(0, 'Não deu para carregar: ' + e.message); });
-window._jogo = () => ({ carro, mundo, camera, scene, renderer, racha, controles });
+window._jogo = () => ({ carro, mundo, camera, scene, renderer, racha, controles, rival });
 // teste sem a aba visível: simula N segundos com uma entrada fixa e desenha um quadro
 window._simular = (seg, inp = {}) => {
   const e = { acel: 0, freio: 0, dir: 0, mao: false, ...inp };
-  for (let t = 0; t < seg; t += PASSO) { carro.update(PASSO, e, mundo); racha.update(PASSO, carro); posicionarCamera(PASSO); }
+  for (let t = 0; t < seg; t += PASSO) {
+    carro.update(PASSO, e, mundo);
+    if (rival.ativo) { rival.carro.update(PASSO, rival.pensar(PASSO, racha.sJogador || 0, racha.largando), mundo); colisaoCarros(carro, rival.carro); }
+    racha.update(PASSO, carro, e); posicionarCamera(PASSO);
+  }
   hud.update(0.016, carro, racha.ativo ? racha.infoMapa() : null);
   if (inp.cam) {   // [lado, altura, frente] em relação ao carro
     const f = new THREE.Vector3(Math.sin(carro.ang), 0, Math.cos(carro.ang)), l = new THREE.Vector3(Math.cos(carro.ang), 0, -Math.sin(carro.ang));

@@ -108,6 +108,23 @@
   #girar span { display: block; font-size: 54px; margin-bottom: 12px; }
   @media (orientation: portrait) { body.toque.jogando #girar { display: grid; } }
 
+  /* nitro: barra, botão e linhas de velocidade */
+  #nitro { width: 128px; height: 7px; margin: 6px 0 0 auto; border-radius: 4px; background: #ffffff22; overflow: hidden; }
+  #nitro i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #2f7bff, #8fd3ff); }
+  body.nitro #nitro i { background: linear-gradient(90deg, #8fd3ff, #ffffff); box-shadow: 0 0 10px #8fd3ff; }
+  body.toque #nitro { margin: 4px auto 0; width: 110px; }
+  .tq.nitro { right: max(14px, env(safe-area-inset-right)); bottom: calc(max(18px, env(safe-area-inset-bottom)) + 142px); width: 100px; height: 56px; font-size: 14px; border-color: #6fb6ff99; background: #12306a99; }
+  .tq.nitro.ativo { background: #2f7bffdd; border-color: #fff; }
+  #linhas { position: fixed; inset: -10%; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .25s;
+    background: repeating-conic-gradient(from 0deg at 50% 52%, rgba(255,255,255,0) 0deg 5deg, rgba(220,240,255,0.16) 5deg 5.6deg);
+    -webkit-mask-image: radial-gradient(circle at 50% 52%, transparent 28%, #000 78%); mask-image: radial-gradient(circle at 50% 52%, transparent 28%, #000 78%); }
+  body.nitro.jogando #linhas { opacity: 1; animation: linhas .12s steps(2) infinite; }
+  @keyframes linhas { 50% { transform: rotate(2deg) scale(1.02); } }
+  #posicao { display: none; margin: 2px auto 0; padding: 3px 10px; border-radius: 8px; font-weight: 800; font-size: 14px; background: #1f7a3ccc; width: max-content; }
+  #posicao.on { display: block; }
+  #posicao.atras { background: #b3121bcc; }
+  #grana { margin: 10px 0 0; font-weight: 700; color: #7dffa0; font-size: 14px; }
+  #fim-titulo { font-size: 15px; font-weight: 800; color: #ffb27f; }
   #fim .num { font-size: 56px; font-weight: 900; font-style: italic; margin: 4px 0; font-variant-numeric: tabular-nums; }
 </style>
 <script type="importmap">
@@ -115,15 +132,16 @@
  "imports": {
   "three": "./vendor/three/build/three.module.js",
   "three/addons/": "./vendor/three/examples/jsm/",
-  "./js/carro.js": "./js/carro.js?v=fcedc7a4a3",
-  "./js/construcoes.js": "./js/construcoes.js?v=fcedc7a4a3",
-  "./js/controles.js": "./js/controles.js?v=fcedc7a4a3",
-  "./js/hud.js": "./js/hud.js?v=fcedc7a4a3",
-  "./js/lockup.js": "./js/lockup.js?v=fcedc7a4a3",
-  "./js/main.js": "./js/main.js?v=fcedc7a4a3",
-  "./js/marcos.js": "./js/marcos.js?v=fcedc7a4a3",
-  "./js/mundo.js": "./js/mundo.js?v=fcedc7a4a3",
-  "./js/racha.js": "./js/racha.js?v=fcedc7a4a3"
+  "./js/carro.js": "./js/carro.js?v=f8a387f69e",
+  "./js/construcoes.js": "./js/construcoes.js?v=f8a387f69e",
+  "./js/controles.js": "./js/controles.js?v=f8a387f69e",
+  "./js/hud.js": "./js/hud.js?v=f8a387f69e",
+  "./js/lockup.js": "./js/lockup.js?v=f8a387f69e",
+  "./js/main.js": "./js/main.js?v=f8a387f69e",
+  "./js/marcos.js": "./js/marcos.js?v=f8a387f69e",
+  "./js/mundo.js": "./js/mundo.js?v=f8a387f69e",
+  "./js/racha.js": "./js/racha.js?v=f8a387f69e",
+  "./js/rival.js": "./js/rival.js?v=f8a387f69e"
  }
 }
 </script>
@@ -143,11 +161,13 @@
     <div class="marca">Modo Máquina · protótipo</div>
     <h1>RACHA<br><span>PARAUAPEBAS</span></h1>
     <p class="sub">Uno 1.6R, noite, ruas de verdade. Saída da Lock-Up Auto Center.</p>
-    <button class="bt forte" data-acao="racha">Racha da Lock-Up<small>Contra o relógio, uns 1,8 km, boa parte pela PA-160</small></button>
+    <button class="bt forte" data-acao="racha">Racha contra o Zé Turbo<small>Saída da Lock-Up, 1,8 km, boa parte pela PA-160. Vale grana</small></button>
+    <button class="bt" data-acao="relogio">Contra o relógio<small>O mesmo percurso, sozinho, atrás do recorde</small></button>
     <button class="bt" data-acao="livre">Rodar livre<small>Explore o bairro sem cronômetro</small></button>
-    <p class="ajuda so-teclado">W A S D ou setas · Espaço: freio de mão · C: câmera · R: voltar pra rua · M: som · Esc: menu</p>
+    <p id="grana"></p>
+    <p class="ajuda so-teclado">W A S D ou setas · Shift: nitro · Espaço: freio de mão · C: câmera · R: voltar pra rua · M: som · Esc: menu</p>
     <p id="dica-tela"><b>Tela cheia no iPhone:</b> o Safari não deixa o site ocupar a tela toda. Toque em Compartilhar <span aria-hidden="true">(□↑)</span> → <b>Adicionar à Tela de Início</b> e abra o jogo pelo ícone "Racha PBS": ele abre sem barras, deitado.</p>
-    <p class="ajuda so-toque">Gire o celular na horizontal · ◀ ▶ para virar · botões da direita: acelerar, freio/ré e freio de mão</p>
+    <p class="ajuda so-toque">Gire o celular na horizontal · ◀ ▶ para virar · botões da direita: acelerar, nitro, freio/ré e freio de mão · segure ACELERA na contagem para a largada perfeita</p>
     <p class="creditos">Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">colaboradores do OpenStreetMap</a> (ODbL) ·
       Uno: malha base de subishi e bancos de boitaloran no Sketchfab (CC BY 4.0), adaptados pelo Modo Máquina ·
       Lock-Up recriada a partir de fotos da oficina · <a href="vendor/three/LICENSE" target="_blank" rel="noopener">three.js</a> (MIT)</p>
@@ -156,10 +176,11 @@
 
 <div id="fim" class="painel">
   <div class="caixa">
-    <div class="marca">Chegada</div>
+    <div class="marca" id="fim-titulo">Chegada</div>
     <div class="num" id="fim-tempo">0:00.00</div>
     <p class="sub" id="fim-recorde"></p>
     <p class="sub" id="fim-dist" style="margin-top:-14px"></p>
+    <p class="sub" id="fim-grana" style="color:#7dffa0;font-weight:700"></p>
     <button class="bt forte" data-acao="racha">Correr de novo</button>
     <button class="bt" data-acao="livre">Rodar livre</button>
     <button class="bt" data-acao="menu">Menu</button>
@@ -167,11 +188,11 @@
 </div>
 
 <!-- HUD -->
-<div class="hud" id="velo"><div><span id="vel">0</span></div><span class="un">KM/H</span><span id="marcha">1</span></div>
+<div class="hud" id="velo"><div><span id="vel">0</span></div><span class="un">KM/H</span><span id="marcha">1</span><div id="nitro"><i></i></div></div>
 <canvas class="hud" id="mini" width="300" height="300"></canvas>
 <div class="hud" id="rua"></div>
 <div class="hud" id="aviso"></div>
-<div class="hud" id="painel-racha"><div id="tempo">0:00.00</div><div id="cp"></div>
+<div class="hud" id="painel-racha"><div id="tempo">0:00.00</div><div id="posicao"></div><div id="cp"></div>
   <div id="gps"><div id="gps-icone"></div><div class="gps-txt"><b id="gps-dist"></b><span id="gps-txt"></span><small id="gps-rua"></small></div></div>
 </div>
 
@@ -182,6 +203,7 @@
   <button class="ic" data-acao="menu" title="Menu (Esc)" aria-label="Menu">☰</button>
 </div>
 
+<div id="linhas" aria-hidden="true"></div>
 <div id="girar"><div><span>📱↻</span>Gire o celular na horizontal para dirigir</div></div>
 
 <div class="toques">
@@ -190,8 +212,9 @@
   <div class="tq mao" data-toque="mao">MÃO</div>
   <div class="tq freio" data-toque="freio">FREIO</div>
   <div class="tq acel" data-toque="acel">ACELERA</div>
+  <div class="tq nitro" data-toque="nitro">NITRO</div>
 </div>
 
-<script type="module" src="js/main.js?v=fcedc7a4a3"></script>
+<script type="module" src="js/main.js?v=f8a387f69e"></script>
 </body>
 </html>
