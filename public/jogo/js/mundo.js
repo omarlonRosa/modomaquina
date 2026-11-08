@@ -249,6 +249,7 @@ export class Mundo {
     this.paredes = new Grade(16);
     this.ruas = new Grade(24);
     this.raio = mapa.raio;
+    this.ocupados = opts.ocupados || [];
     const grupo = new THREE.Group(); scene.add(grupo); this.grupo = grupo;
     const tAv = texAvenida(), tAvMao = texAvenidaMao(), tRua = texRua(), tTerra = texTerra();
 
@@ -352,6 +353,7 @@ export class Mundo {
     this.terrenos = [];
     const bb = p => { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const [x, z] of p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); } return [x0, z0, x1, z1]; };
     for (const b of predios) { const r = bb(b.p); occ.add(r, ...r); }
+    for (const p of this.ocupados) { const r = bb(p); occ.add(r, ...r); }   // hotel, galpão branco, placa (marcos.js)
     const sobrepoe = r => { for (const o of occ.perto((r[0] + r[2]) / 2, (r[1] + r[3]) / 2, Math.max(r[2] - r[0], r[3] - r[1]))) if (r[0] < o[2] + 0.8 && r[2] > o[0] - 0.8 && r[1] < o[3] + 0.8 && r[3] > o[1] - 0.8) return true; return false; };
     const longeDasRuas = (x, z) => { for (const s of this.ruas.perto(x, z, 16)) { const [qx, qz] = pontoSeg(x, z, s); if (Math.hypot(x - qx, z - qz) < s.rua.w / 2 + 2.2) return false; } return true; };
     for (const r of ruas) {

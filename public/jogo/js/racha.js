@@ -96,7 +96,7 @@ export class Racha {
     this.iRota = 0;
 
     this.criarSeta(scene);
-    this.criarFaixa(scene);
+    this.criarFaixa(scene, mundo);
   }
 
   criarSeta(scene) {
@@ -115,14 +115,19 @@ export class Racha {
     scene.add(this.seta);
   }
 
-  criarFaixa(scene) {
+  criarFaixa(scene, mundo) {
     const p = this.rota, n = p.length, L = 1.4, Y = 0.09;
+    // nas ruas de mão dupla as setas vão na faixa da direita (no Brasil se anda pela direita);
+    // na pista de mão única (PA-160) ficam no meio da pista
+    const desl0 = p.map(([x, z]) => { const i = mundo ? mundo.infoRua(x, z, 12) : null; return i && i.rua && !i.rua.mao && i.dist < 3 ? i.rua.w / 4 : 0; });
+    const desl = desl0.map((_, i) => { let s = 0, k = 0; for (let j = Math.max(0, i - 3); j <= Math.min(n - 1, i + 3); j++) { s += desl0[j]; k++; } return s / k; });
     const pos = new Float32Array(n * 2 * 3), uv = new Float32Array(n * 2 * 2), idx = [];
     for (let i = 0; i < n; i++) {
       const a = p[Math.max(0, i - 1)], b = p[Math.min(n - 1, i + 1)];
       let dx = b[0] - a[0], dz = b[1] - a[1]; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
       const ex = dz * L / 2, ez = -dx * L / 2;          // lado esquerdo
-      pos.set([p[i][0] + ex, Y, p[i][1] + ez, p[i][0] - ex, Y, p[i][1] - ez], i * 6);
+      const cx = p[i][0] - dz * desl[i], cz = p[i][1] + dx * desl[i];   // puxado para a direita
+      pos.set([cx + ex, Y, cz + ez, cx - ex, Y, cz - ez], i * 6);
       const v = this.rotaS[i] / 2.4;
       uv.set([0, v, 1, v], i * 4);
       if (i < n - 1) { const o = i * 2; idx.push(o, o + 1, o + 2, o + 1, o + 3, o + 2); }
@@ -233,7 +238,7 @@ export class Racha {
       const d = prox.s - sCarro;
       ang = prox.ang;
       const a = Math.abs(ang), lado = ang > 0 ? 'esquerda' : 'direita';
-      txt = a > 2.2 ? `Retorno à ${lado}` : a > 0.9 ? `Vire à ${lado}` : `Mantenha à ${lado}`;
+      txt = a > 1.75 ? `Retorno à ${lado}` : a > 0.9 ? `Vire à ${lado}` : `Mantenha à ${lado}`;
       dist = d < 18 ? 'agora' : d < 100 ? Math.round(d / 5) * 5 + ' m' : Math.round(d / 10) * 10 + ' m';
       rua = prox.rua;
       this.el.gps.classList.toggle('perto', d < 60);
@@ -277,9 +282,9 @@ export class Racha {
   terminar() {
     const tempo = this.t;
     let recorde = null;
-    try { recorde = parseFloat(localStorage.getItem('racha-lockup-recorde')); } catch {}
+    try { recorde = parseFloat(localStorage.getItem('racha-lockup-recorde-v2')); } catch {}
     const novo = !recorde || tempo < recorde;
-    if (novo) try { localStorage.setItem('racha-lockup-recorde', String(tempo)); } catch {}
+    if (novo) try { localStorage.setItem('racha-lockup-recorde-v2', String(tempo)); } catch {}
     this.parar();
     this.fim({ tempo: fmt(tempo), recorde: novo ? null : fmt(recorde), novo, metros: this.dados.metros });
   }

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Mundo } from './mundo.js';
 import { criarLockup, areaLivre } from './lockup.js';
+import { criarMarcos, areasMarcos } from './marcos.js';
 import { Carro, Som } from './carro.js';
 import { Controles } from './controles.js';
 import { Hud } from './hud.js';
@@ -73,8 +74,9 @@ async function iniciar() {
   const glb = await baixar('modelos/uno-hoje.glb', 0.75, 0.1);
   progresso(0.86, 'Montando a cidade…');
   await new Promise(r => setTimeout(r, 30));
-  mundo = new Mundo(mapa, scene, { areaLivre: areaLivre(mapa.lockup), poucosPostes: celular });
+  mundo = new Mundo(mapa, scene, { areaLivre: areaLivre(mapa.lockup), poucosPostes: celular, ocupados: areasMarcos(mapa.lockup) });
   lockup = criarLockup(mapa.lockup, mundo, scene);
+  criarMarcos(mapa.lockup, mundo, scene);
   // texturas como <img> (blob: liberado em img-src) e não por fetch, que a CSP do site bloqueia em connect-src
   const loader = new GLTFLoader().register(parser => { parser.textureLoader = new THREE.TextureLoader(parser.options.manager); return { name: 'texturas_por_img' }; });
   const gltf = await loader.parseAsync(glb, '');
@@ -84,7 +86,7 @@ async function iniciar() {
   carro.grupo.traverse(o => { if (o.isMesh && o.material && o.material.name === 'glass') vidros.push(o.material); });
   for (const m of vidros) m.userData.opacidade = m.opacity;
   controles = new Controles();
-  hud = new Hud(mapa, mapa.lockup, mundo.lotes);
+  hud = new Hud(mapa, mapa.lockup, mundo.lotes.concat(areasMarcos(mapa.lockup).slice(0, 2).map(p => ({ p }))));
   racha = new Racha(mapa.racha, scene, mundo);
   som = new Som();
   carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
