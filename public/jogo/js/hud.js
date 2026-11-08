@@ -52,14 +52,17 @@ export class Hud {
     g.translate(W / 2, H / 2); g.scale(k, k); g.rotate(carro.ang - Math.PI);
     const [cx, cz] = this.P(carro.pos.x, carro.pos.z);
     g.drawImage(this.mapa, -cx, -cz);
-    if (rota && rota.pontos) {
-      g.strokeStyle = 'rgba(255,170,40,0.85)'; g.lineWidth = 3; g.setLineDash([6, 5]);
-      g.beginPath();
-      const ini = Math.max(0, rota.prox - 1);
-      rota.pontos.slice(ini).forEach((p, i) => { const [x, z] = this.P(...p); g[i ? 'lineTo' : 'moveTo'](x - cx, z - cz); });
-      g.stroke(); g.setLineDash([]);
+    if (rota && rota.rota) {
+      // rota estilo GPS: linha grossa com contorno escuro, só o que falta andar
+      const pts = rota.rota.slice(Math.max(0, Math.floor(rota.iRota)));
+      const traco = () => { g.beginPath(); pts.forEach((p, i) => { const [x, z] = this.P(...p); g[i ? 'lineTo' : 'moveTo'](x - cx, z - cz); }); g.stroke(); };
+      g.lineCap = g.lineJoin = 'round';
+      g.strokeStyle = '#3a1c00'; g.lineWidth = 9; traco();
+      g.strokeStyle = '#ffa21f'; g.lineWidth = 5.5; traco();
+      const fim = rota.rota[rota.rota.length - 1];
+      { const [x, z] = this.P(...fim); g.fillStyle = '#40ff70'; g.strokeStyle = '#000'; g.lineWidth = 2; g.beginPath(); g.arc(x - cx, z - cz, 7, 0, 7); g.fill(); g.stroke(); }
       const p = rota.pontos[rota.prox];
-      if (p) { const [x, z] = this.P(...p); g.fillStyle = '#ffb020'; g.beginPath(); g.arc(x - cx, z - cz, 6, 0, 7); g.fill(); }
+      if (p) { const [x, z] = this.P(...p); g.fillStyle = '#fff'; g.strokeStyle = '#ffa21f'; g.lineWidth = 2.5; g.beginPath(); g.arc(x - cx, z - cz, 5, 0, 7); g.fill(); g.stroke(); }
     }
     g.restore();
     // carro no centro

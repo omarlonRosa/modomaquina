@@ -81,7 +81,7 @@ async function iniciar() {
   carro = new Carro(gltf, scene);
   controles = new Controles();
   hud = new Hud(mapa, mapa.lockup, mundo.lotes);
-  racha = new Racha(mapa.racha, scene);
+  racha = new Racha(mapa.racha, scene, mundo);
   som = new Som();
   carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
   posicionarCamera(1, true);
@@ -182,8 +182,9 @@ function loop(t) {
     while (acc >= PASSO) { carro.update(PASSO, inp, mundo); acc -= PASSO; }
     if (carro.choque > choqueAntes + 0.15) som.batida(carro.choque);
     choqueAntes = carro.choque;
+    racha.camDentro = !!CAMS[camModo].dentro;
     racha.update(dt, carro);
-    hud.update(dt, carro, racha.ativo ? { pontos: racha.pontos, prox: racha.prox } : null);
+    hud.update(dt, carro, racha.ativo ? racha.infoMapa() : null);
     som.update(carro, inp.acel);
   } else carro.atualizarModelo(dt);
   posicionarCamera(dt);
@@ -226,7 +227,7 @@ window._jogo = () => ({ carro, mundo, camera, scene, renderer, racha, controles 
 window._simular = (seg, inp = {}) => {
   const e = { acel: 0, freio: 0, dir: 0, mao: false, ...inp };
   for (let t = 0; t < seg; t += PASSO) { carro.update(PASSO, e, mundo); racha.update(PASSO, carro); posicionarCamera(PASSO); }
-  hud.update(0.016, carro, racha.ativo ? { pontos: racha.pontos, prox: racha.prox } : null);
+  hud.update(0.016, carro, racha.ativo ? racha.infoMapa() : null);
   if (inp.cam) {   // [lado, altura, frente] em relação ao carro
     const f = new THREE.Vector3(Math.sin(carro.ang), 0, Math.cos(carro.ang)), l = new THREE.Vector3(Math.cos(carro.ang), 0, -Math.sin(carro.ang));
     camera.position.copy(carro.pos).addScaledVector(l, inp.cam[0]).addScaledVector(f, inp.cam[2]); camera.position.y = inp.cam[1];
