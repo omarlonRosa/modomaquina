@@ -12,8 +12,8 @@ const ZONA = [6300, 6950];            // troca perfeita
 
 const torque = rpm => { const x = (rpm - 5300) / 4300; return Math.max(0.42, 1 - x * x); };
 
-function piloto() {
-  return { s: 0, v: 0, g: 0, rpm: LENTA, trocando: 0, boost: 0, patina: 0, nitro: 1, nitroOn: false,
+function piloto(mods = {}) {
+  return { m: { acel: mods.acel || 1, vmax: mods.vmax || 0, nitroDur: mods.nitroDur || 3 }, s: 0, v: 0, g: 0, rpm: LENTA, trocando: 0, boost: 0, patina: 0, nitro: 1, nitroOn: false,
     largou: false, queimou: false, reacao: null, tempo: null, vFinal: 0, noCorte: 0 };
 }
 
@@ -24,16 +24,17 @@ function passo(p, dt, acel, nitro) {
     return;
   }
   let a = 0;
-  const vRpm = LENTA + (p.v / VG[p.g]) * (CORTE - LENTA);
+  const esc = 1 + p.m.vmax / 49;                    // motor/turbo esticam as marchas
+  const vRpm = LENTA + (p.v / (VG[p.g] * esc)) * (CORTE - LENTA);
   if (p.trocando > 0) {
     p.trocando -= dt; p.rpm += (vRpm - p.rpm) * Math.min(1, dt * 12); a = -0.3;
   } else {
     p.rpm = Math.max(vRpm, p.g === 0 && p.v < 6 && acel > 0.5 ? 3600 : vRpm);
     if (p.rpm >= CORTE) { p.rpm = CORTE - Math.random() * 280; p.noCorte += dt; a = 0; }   // batendo no corte
-    else a = acel * AG[p.g] * torque(p.rpm) * (p.boost > 0 ? 1.13 : 1) * (p.patina > 0 ? 0.62 : 1);
+    else a = acel * AG[p.g] * p.m.acel * torque(p.rpm) * (p.boost > 0 ? 1.13 : 1) * (p.patina > 0 ? 0.62 : 1);
   }
   p.nitroOn = !!nitro && p.nitro > 0 && p.trocando <= 0;
-  if (p.nitroOn) { a += 3.7; p.nitro = Math.max(0, p.nitro - dt / 2.6); }
+  if (p.nitroOn) { a += 3.7; p.nitro = Math.max(0, p.nitro - dt / (2.6 * p.m.nitroDur / 3)); }
   a -= 0.00085 * p.v * p.v;                         // ar
   p.boost -= dt; p.patina -= dt;
   p.v = Math.max(0, p.v + a * dt); p.s += p.v * dt;
@@ -84,7 +85,7 @@ export class Arrancada {
 
   iniciar(carro, rival, hud, aoTerminar) {
     this.carro = carro; this.rival = rival; this.hud = hud; this.fim = aoTerminar;
-    this.eu = piloto(); this.ele = piloto();
+    this.eu = piloto(carro.mods); this.ele = piloto(rival.carro.mods);
     this.eu.nitro = 1; this.ele.nitro = 1;
     this.fase = 'pre';           // pre (segurar freio) → arvore → corrida → acabou
     this.t = 0; this.tVerde = null; this.freioAntes = false; this.trocaAntes = false; this.tAcabou = 0;

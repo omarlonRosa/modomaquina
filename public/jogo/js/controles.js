@@ -46,11 +46,12 @@ export class Controles {
     };
     let ultimoFim = 0;
     const opc = { passive: false };
+    const rola = t => t && t.closest && t.closest('.rolavel');      // listas que rolam (garagem)
     document.addEventListener('touchstart', e => {
-      if (!ehBotao(e.target) || e.touches.length > 1) e.preventDefault();
+      if ((!ehBotao(e.target) && !rola(e.target)) || e.touches.length > 1) e.preventDefault();
       atualizar(e);
     }, opc);
-    document.addEventListener('touchmove', e => { e.preventDefault(); atualizar(e); }, opc);
+    document.addEventListener('touchmove', e => { if (!(rola(e.target) && e.touches.length === 1)) e.preventDefault(); atualizar(e); }, opc);
     const fim = e => {
       if (this.acoes.primeiroToque) this.acoes.primeiroToque();
       // segundo toque rápido no mesmo lugar = zoom no Safari; corta, menos em botões do menu

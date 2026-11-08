@@ -1,0 +1,11 @@
+{
+  "apoio": "https://www.instagram.com/modomaquina.br/",
+  "etapas": [
+    { "nome": "Fiação e mangueiras de combustível refeitas", "feita": false,
+      "premio": { "tipo": "nitro", "nome": "Nitro Modo Máquina", "efeito": "+1 s de nitro" } },
+    { "nome": "Ar-condicionado digital funcionando", "feita": false,
+      "premio": { "tipo": "cor", "nome": "Pintura Laranja Modo Máquina", "efeito": "cor exclusiva" } },
+    { "nome": "Painel digital instalado no Uno", "feita": false,
+      "premio": { "tipo": "neon", "nome": "Neon Laranja Modo Máquina", "efeito": "neon exclusivo" } }
+  ]
+}

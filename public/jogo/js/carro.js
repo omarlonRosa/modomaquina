@@ -99,25 +99,26 @@ export class Carro {
     this.rua = info.rua;
     const naTerra = !info.rua || info.dist > info.rua.w / 2 + 2.2 || info.rua.terra;
     this.foraDaRua = naTerra;
-    const vmax = (naTerra ? 30 : 49) * (1 - 0.2 * (this.avaria || 0));   // avariado no canteiro: perde velocidade
-    const aderencia = inp.mao ? 1.3 : naTerra ? 4.2 : 9;
+    const M = this.mods || {};                                       // peças da garagem (garagem.js)
+    const vmax = (naTerra ? 30 : 49 + (M.vmax || 0)) * (1 - 0.2 * (this.avaria || 0));   // avariado no canteiro: perde velocidade
+    const aderencia = inp.mao ? 1.3 : (naTerra ? 4.2 : 9) * (M.grip || 1);
 
     // nitro: empurrão forte e mais velocidade final enquanto tem no cilindro (uns 3 s cheio)
     const nitroOn = !!inp.nitro && this.nitro > 0.01 && vf > 2 && !inp.parado;
-    if (nitroOn) this.nitro = Math.max(0, this.nitro - dt / 3);
-    else this.nitro = Math.min(1, this.nitro + dt * (0.03 + (this.derrapando || 0) * 0.12));   // recarrega devagar, mais rápido derrapando
+    if (nitroOn) this.nitro = Math.max(0, this.nitro - dt / (M.nitroDur || 3));
+    else this.nitro = Math.min(1, this.nitro + dt * (0.03 + (this.derrapando || 0) * 0.12) * (M.nitroRec || 1));   // recarrega devagar, mais rápido derrapando
     this.nitroAtivo = nitroOn;
     const vmaxEf = vmax + (nitroOn ? 14 : 0);
     // motor, freio e ré
     let ac = 0;
     if (inp.acel > 0) {
       if (vf < -0.5) ac = 11 * inp.acel;
-      else ac = inp.acel * (4.6 + (this.bonus || 0)) * Math.max(0, 1 - Math.pow(Math.max(vf, 0) / vmaxEf, 1.7)) * (naTerra ? 0.8 : 1);
+      else ac = inp.acel * (4.6 + (this.bonus || 0)) * (M.acel || 1) * Math.max(0, 1 - Math.pow(Math.max(vf, 0) / vmaxEf, 1.7)) * (naTerra ? 0.8 : 1);
     }
     if (nitroOn) ac += 6.5 * Math.max(0, 1 - Math.max(vf, 0) / vmaxEf);
     if (this.impulso > 0) { this.impulso -= dt; ac += 5; }        // largada perfeita
     if (inp.freio > 0) {
-      if (vf > 0.6) ac -= 11 * inp.freio;
+      if (vf > 0.6) ac -= 11 * inp.freio * (M.freio || 1);
       else ac -= 3.4 * inp.freio * (vf > -9 ? 1 : 0);          // ré até ~32 km/h
     }
     if (!inp.acel && !inp.freio) ac -= Math.sign(vf) * Math.min(Math.abs(vf) / dt, 0.9 + Math.abs(vf) * 0.02);

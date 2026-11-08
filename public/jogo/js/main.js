@@ -9,6 +9,7 @@ import { Hud } from './hud.js';
 import { Racha } from './racha.js';
 import { Rival, colisaoCarros } from './rival.js';
 import { Arrancada } from './arrancada.js';
+import { Garagem } from './garagem.js';
 
 const celular = matchMedia('(pointer: coarse)').matches;
 document.body.classList.toggle('toque', celular);
@@ -73,7 +74,8 @@ async function baixar(url, peso, base) {
   return out.buffer;
 }
 
-let mundo, carro, hud, racha, lockup, som, controles, rival, arrancada;
+let mundo, carro, hud, racha, lockup, som, controles, rival, arrancada, garagem;
+let garagemAng = 0.9, arrastando = null;
 let modo = 'menu', camModo = 0, vidros = [];
 const CAMS = [{ d: 5.4, h: 2.0, olhar: 1.0 }, { d: 9, h: 3.8, olhar: 1.2 }, { d: -0.35, h: 1.12, olhar: 1.0, dentro: true }];
 
@@ -101,6 +103,10 @@ async function iniciar() {
   racha = new Racha(mapa.racha, scene, mundo);
   rival = new Rival(gltfRival, scene, racha);
   arrancada = new Arrancada(racha, scene, THREE);
+  garagem = new Garagem();
+  try { garagem.projeto = await (await fetch(comVersao('dados/projeto.json'))).json(); } catch (e) { console.warn('projeto.json', e); }
+  garagem.aplicar(carro);
+  ajustarRival();
   mostrarGrana();
   som = new Som();
   carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
@@ -173,6 +179,7 @@ function ligarAcoes() {
     racha: () => jogar('racha'),
     relogio: () => jogar('relogio'),
     arrancada: () => jogar('arrancada'),
+    garagem: () => abrirGaragem(),
     camera: () => { camModo = (camModo + 1) % CAMS.length; },
     som: () => { som.iniciar(); som.mudo = !som.mudo; document.querySelector('[data-acao=som]').classList.toggle('mudo', som.mudo); },
     reset: () => {
@@ -192,6 +199,24 @@ function ligarAcoes() {
   };
 }
 
+// o Zé também mexe no carro: acompanha a preparação do seu Uno para o racha seguir disputado
+function ajustarRival() {
+  const p = garagem.preparo();
+  rival.carro.mods = { acel: 1 + 0.42 * p, vmax: 7.5 * p, grip: 1 + 0.25 * p, freio: 1 + 0.15 * p, nitroDur: 3 + 1.6 * p, nitroRec: 1 + 0.4 * p };
+}
+
+function abrirGaragem() {
+  const menu = document.getElementById('menu');
+  racha.parar(); arrancada.parar();
+  modo = 'garagem'; menu.classList.remove('on'); document.getElementById('fim').classList.remove('on');
+  document.body.classList.remove('jogando'); document.body.classList.add('garagem');
+  carro.reset(lockup.inicio.x, lockup.inicio.z, lockup.inicio.ang);
+  garagem.abrir(document.getElementById('garagem'), () => { garagem.aplicar(carro); ajustarRival(); mostrarGrana(); }, () => {
+    garagem.fechar(); document.body.classList.remove('garagem');
+    modo = 'menu'; menu.classList.add('on'); mostrarGrana();
+  });
+}
+
 function mostrarGrana() {
   let g = 0; try { g = parseInt(localStorage.getItem('racha-grana')) || 0; } catch {}
   const el = document.getElementById('grana'); if (el) el.textContent = g ? `Caixa da garagem: R$ ${g}` : '';
@@ -203,7 +228,15 @@ function posicionarCamera(dt, instantaneo) {
   const porDentro = !!c.dentro && modo !== 'menu';
   for (const m of vidros) m.opacity = porDentro ? 0.12 : m.userData.opacidade;
   const f = new THREE.Vector3(Math.sin(carro.ang), 0, Math.cos(carro.ang));
-  if (modo === 'menu') {
+  if (modo === 'garagem') {
+    if (!arrastando) garagemAng += dt * 0.18;
+    const emPe = innerHeight > innerWidth;                    // em pé o painel cobre a metade de baixo: câmera mais longe e alta
+    const r = emPe ? 7.5 : 5.0, alt = emPe ? 2.6 : 1.55;
+    alvoCam.set(carro.pos.x + Math.sin(carro.ang + garagemAng) * r, alt, carro.pos.z + Math.cos(carro.ang + garagemAng) * r);
+    const dx = carro.pos.x - alvoCam.x, dz = carro.pos.z - alvoCam.z, L = Math.hypot(dx, dz) || 1;
+    const painelDireita = innerWidth > innerHeight;            // deitado: painel à direita; em pé: painel embaixo
+    olharCam.set(carro.pos.x + (painelDireita ? -dz / L * 1.5 : 0), painelDireita ? 0.75 : -2.2, carro.pos.z + (painelDireita ? dx / L * 1.5 : 0));
+  } else if (modo === 'menu') {
     // giro lento em volta do carro, mostrando a fachada da Lock-Up
     const t = performance.now() / 1000 * 0.12;
     alvoCam.set(carro.pos.x + Math.sin(carro.ang + 0.9 + Math.sin(t) * 0.5) * 9, 2.2, carro.pos.z + Math.cos(carro.ang + 0.9 + Math.sin(t) * 0.5) * 9);
@@ -248,7 +281,7 @@ function loop(t) {
     if (carro.nitroAtivo !== nitroAntes) { nitroAntes = carro.nitroAtivo; document.body.classList.toggle('nitro', nitroAntes); }
     hud.update(dt, carro, null);
     som.update(carro, inp.acel);
-  } else if (modo !== 'menu') {
+  } else if (modo !== 'menu' && modo !== 'garagem') {
     acc += dt;
     const rInp = rival.ativo ? rival.pensar(dt, racha.sJogador || 0, racha.largando) : null;
     while (acc >= PASSO) {
@@ -267,11 +300,17 @@ function loop(t) {
     racha.update(dt, carro, inp);
     hud.update(dt, carro, racha.ativo ? racha.infoMapa() : null);
     som.update(carro, inp.acel);
-  } else carro.atualizarModelo(dt);
+  } else carro.atualizarModelo(dt);   // menu e garagem: carro parado
   posicionarCamera(dt);
   renderer.render(scene, camera);
   fpsN++; fpsT += dt; if (fpsT > 1) { window._fps = fpsN / fpsT; fpsN = 0; fpsT = 0; }
 }
+
+// garagem: arrastar na tela gira a câmera em volta do carro
+renderer.domElement.addEventListener('pointerdown', e => { if (modo === 'garagem') arrastando = { x: e.clientX, a: garagemAng }; });
+addEventListener('pointermove', e => { if (arrastando && modo === 'garagem') garagemAng = arrastando.a - (e.clientX - arrastando.x) * 0.012; });
+addEventListener('pointerup', () => { arrastando = null; });
+addEventListener('pointercancel', () => { arrastando = null; });
 
 function redimensionar() {
   const [w, h] = tamanho();
@@ -303,7 +342,7 @@ function telaCheia() {
 document.addEventListener('visibilitychange', () => { if (document.hidden && som) som.pausar(); else if (som && modo !== 'menu') som.iniciar(); });
 
 iniciar().catch(e => { console.error(e); progresso(0, 'Não deu para carregar: ' + e.message); });
-window._jogo = () => ({ carro, mundo, camera, scene, renderer, racha, controles, rival, arrancada });
+window._jogo = () => ({ carro, mundo, camera, scene, renderer, racha, controles, rival, arrancada, garagem });
 // teste sem a aba visível: simula N segundos com uma entrada fixa e desenha um quadro
 window._simular = (seg, inp = {}) => {
   const e = { acel: 0, freio: 0, dir: 0, mao: false, ...inp };
