@@ -33,6 +33,15 @@ function texAvenida() {
     g.fillStyle = '#d8b13a'; g.fillRect(w / 2 - 4, 0, 3, h); g.fillRect(w / 2 + 1, 0, 3, h); // faixa dupla amarela
   });
 }
+// pista de mão única (cada lado da PA-160 e das avenidas duplicadas): bordas brancas e tracejado branco
+function texAvenidaMao() {
+  return canvasTex(128, 512, (g, w, h) => {
+    ruido(g, w, h, '#57575c', 0.13, 6000);
+    g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(w * 0.18, 0, 10, h); g.fillRect(w * 0.72, 0, 10, h);
+    g.fillStyle = '#d9d6cc'; g.fillRect(5, 0, 3, h); g.fillRect(w - 8, 0, 3, h);
+    for (let y = 0; y < h; y += 128) g.fillRect(w / 2 - 2, y, 4, 64);
+  });
+}
 function texRua() {
   return canvasTex(128, 512, (g, w, h) => {
     ruido(g, w, h, '#5c5b60', 0.16, 7000);
@@ -84,12 +93,25 @@ function texFachada() {
   return { map, emi };
 }
 
+// galpão: chapa metálica trapezoidal (frisos verticais) sobre mureta de alvenaria
 function texGalpao() {
   const N = 4, M = 128;
   const map = canvasTex(N * M, N * M, (g, w, h) => {
-    ruido(g, w, h, '#ecebe6', 0.08, 3000);
-    for (let y = 0; y < h; y += 16) { g.fillStyle = 'rgba(0,0,0,0.05)'; g.fillRect(0, y, w, 2); }   // blocos
-    for (let j = 0; j < N; j++) { g.fillStyle = 'rgba(0,0,0,0.10)'; g.fillRect(0, j * M + M - 18, w, 18); }  // rodapé encardido
+    ruido(g, w, h, '#f1f1ee', 0.06, 2500);
+    for (let x = 0; x < w; x += 8) { g.fillStyle = 'rgba(0,0,0,0.13)'; g.fillRect(x, 0, 2, h); g.fillStyle = 'rgba(255,255,255,0.25)'; g.fillRect(x + 3, 0, 1, h); }
+    for (let j = 0; j < N; j++) {
+      g.fillStyle = 'rgba(0,0,0,0.16)'; g.fillRect(0, j * M + M - 30, w, 30);             // mureta mais escura embaixo
+      g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(0, j * M + M - 31, w, 2);
+    }
+  });
+  const emi = canvasTex(8, 8, (g) => { g.fillStyle = '#000'; g.fillRect(0, 0, 8, 8); });
+  return { map, emi };
+}
+
+function texReboco() {
+  const map = canvasTex(256, 256, (g, w, h) => {
+    ruido(g, w, h, '#f4f3ef', 0.07, 2500);
+    g.fillStyle = 'rgba(0,0,0,0.10)'; for (let j = 0; j < 4; j++) g.fillRect(0, j * 64 + 60, w, 4);   // rodapé
   });
   const emi = canvasTex(8, 8, (g) => { g.fillStyle = '#000'; g.fillRect(0, 0, 8, 8); });
   return { map, emi };
@@ -140,7 +162,9 @@ function dentro(p, poly) {
 }
 
 const CORES = ['#efe9dc', '#f2e2b6', '#cfe3d6', '#cddcec', '#efc9b4', '#c9c6c0', '#b5653f', '#f3f1ec', '#a85a3a', '#e9d9a8'];
-const CORES_GALPAO = ['#d9d6cf', '#c4c8cc', '#e8e2d2', '#9fa6ad', '#efefea', '#cfc3a6'];
+const CORES_GALPAO = ['#e4e6e8', '#b9c0c7', '#2f5d9e', '#eef0f1', '#7d868f', '#3d6fb5', '#d6dadd', '#8e2a26', '#4b535b'];
+// casas novas do Parque dos Carajás: branco, gelo, cinzas e bege
+const CORES_CAIXA = ['#f3f2ee', '#e8e6e0', '#dcdcd8', '#c3c6c8', '#8e9296', '#5e6266', '#e7dccb', '#d6c9b0', '#f6f3ea', '#cdd2d6'];
 const PLATIBANDA = [0xe8e5dd, 0x1d1f22, 0xc9271f, 0x1f4f99, 0xf0c419, 0x9aa1a8];
 
 function paredes(predios, fach, cores = CORES) {
@@ -226,7 +250,7 @@ export class Mundo {
     this.ruas = new Grade(24);
     this.raio = mapa.raio;
     const grupo = new THREE.Group(); scene.add(grupo); this.grupo = grupo;
-    const tAv = texAvenida(), tRua = texRua(), tTerra = texTerra();
+    const tAv = texAvenida(), tAvMao = texAvenidaMao(), tRua = texRua(), tTerra = texTerra();
 
     // chão
     const tc = texChao(); tc.repeat.set(160, 160);
@@ -258,11 +282,11 @@ export class Mundo {
     }
 
     // ruas, calçadas e cruzamentos
-    const geo = { av: [], rua: [], terra: [], calc: [], cruz: [], cruzT: [] };
+    const geo = { av: [], avMao: [], rua: [], terra: [], calc: [], cruz: [], cruzT: [] };
     const nos = new Map();
     for (const r of mapa.ruas) {
-      const tipo = r.terra ? 'terra' : r.c >= 3 ? 'av' : 'rua';
-      const y = tipo === 'terra' ? 0.05 : tipo === 'av' ? 0.065 : 0.06;
+      const tipo = r.terra ? 'terra' : r.c >= 3 ? (r.mao ? 'avMao' : 'av') : 'rua';
+      const y = tipo === 'terra' ? 0.05 : tipo === 'rua' ? 0.06 : 0.065;
       geo[tipo].push(faixa(r.p, r.w, y, 8));
       if (!r.terra && r.t !== 'service') geo.calc.push(faixa(r.p, r.w + 3.4, 0.035, 8));
       for (let i = 0; i < r.p.length; i++) {
@@ -284,6 +308,7 @@ export class Mundo {
     add(geo.terra, matRua(tTerra, 2));
     add(geo.rua, matRua(tRua, 3));
     add(geo.av, matRua(tAv, 4));
+    add(geo.avMao, matRua(tAvMao, 4));
     add(geo.cruzT, matRua(tTerra, 5));
     add(geo.cruz, matRua(tCruz, 6));
 
@@ -293,11 +318,13 @@ export class Mundo {
     const lotes = this.gerarLotes(mapa.ruas, predios, livre);
     this.lotes = lotes;
     const casas = lotes.filter(b => b.tipo === 'casa'), galpoes = lotes.filter(b => b.tipo === 'galpao');
+    const antigas = casas.filter(b => b.estilo !== 'caixa'), caixas = casas.filter(b => b.estilo === 'caixa');
     const fach = texFachada();
-    grupo.add(paredes(predios.concat(casas), fach));
+    grupo.add(paredes(predios.concat(antigas), fach));
+    if (caixas.length) grupo.add(paredes(caixas, texReboco(), CORES_CAIXA));
     grupo.add(paredes(galpoes, texGalpao(), CORES_GALPAO));
     construirGalpoes(galpoes, grupo, rnd);
-    construirCasas(casas, grupo, this, rnd);
+    construirCasas(casas, this.terrenos, grupo, this, rnd);
     for (const b of predios) this.addPoligono(b.p);
     for (const b of lotes) this.addPoligono(b.p);
 
@@ -322,6 +349,7 @@ export class Mundo {
   // de frente para a rua, respeitando as ruas, os prédios reais e o terreno da Lock-Up
   gerarLotes(ruas, predios, livre) {
     const occ = new Grade(20), lista = [];
+    this.terrenos = [];
     const bb = p => { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const [x, z] of p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); } return [x0, z0, x1, z1]; };
     for (const b of predios) { const r = bb(b.p); occ.add(r, ...r); }
     const sobrepoe = r => { for (const o of occ.perto((r[0] + r[2]) / 2, (r[1] + r[3]) / 2, Math.max(r[2] - r[0], r[3] - r[1]))) if (r[0] < o[2] + 0.8 && r[2] > o[0] - 0.8 && r[1] < o[3] + 0.8 && r[3] > o[1] - 0.8) return true; return false; };
@@ -337,8 +365,10 @@ export class Mundo {
           const comercial = r.c >= 4 || (r.c === 3 && rnd() < 0.55);
           while (acc < L) {
             const galpao = comercial && rnd() < 0.85;
+            // casa-caixote (fachada na calçada, platibanda, portão de garagem) ou casa antiga (muro, quintal e telhado)
+            const caixa = !galpao && rnd() < 0.68;
             const calc = r.w / 2 + 3.4;
-            const patio = galpao ? 2 + rnd() * 7 : 0, quintal = galpao ? 0 : 1.5 + rnd() * 2.5;
+            const patio = galpao ? 2 + rnd() * 7 : 0, quintal = galpao ? 0 : caixa ? 0.15 : 1.5 + rnd() * 2.5;
             const frente = galpao ? 11 + rnd() * 11 : 8 + rnd() * 4.5, fundo = galpao ? 16 + rnd() * 14 : 9 + rnd() * 8;
             const recuo = calc + patio + quintal;
             if (acc + frente > L) break;
@@ -346,20 +376,28 @@ export class Mundo {
             const cx = a[0] + tx * (acc + frente / 2), cz = a[1] + tz * (acc + frente / 2);
             const pts = [[-frente / 2, recuo], [frente / 2, recuo], [frente / 2, recuo + fundo], [-frente / 2, recuo + fundo]]
               .map(([u, v]) => [cx + tx * u + nx * v, cz + tz * u + nz * v]);
-            acc += frente + 0.6 + rnd() * 2.5;
-            if (vazio) continue;
+            acc += frente + (caixa ? 0.05 + rnd() * 0.4 : 0.6 + rnd() * 2.5);
+            const terreno = vazio && !galpao && r.t !== 'service' && rnd() < 0.5;   // baldio murado
+            if (vazio && !terreno) continue;
             if (pts.some(([x, z]) => Math.hypot(x, z) > this.raio - 20 || !livre(x, z) || !longeDasRuas(x, z))) continue;
             const ctr = [(pts[0][0] + pts[2][0]) / 2, (pts[0][1] + pts[2][1]) / 2];
             if (!longeDasRuas(...ctr)) continue;
-            const caixa = bb(pts);
-            if (sobrepoe(caixa)) continue;
-            occ.add(caixa, ...caixa);
+            const bbLote = bb(pts);
+            if (sobrepoe(bbLote)) continue;
+            occ.add(bbLote, ...bbLote);
             const s = rnd(), f = [-nx, -nz];
+            const muroFrente = [[cx + tx * (-frente / 2) + nx * calc, cz + tz * (-frente / 2) + nz * calc], [cx + tx * (frente / 2) + nx * calc, cz + tz * (frente / 2) + nz * calc]];
+            if (terreno) { this.terrenos.push({ muro: muroFrente, f, tijolo: rnd() < 0.7 }); continue; }
             if (galpao) {
               lista.push({ tipo: 'galpao', h: 5.5 + rnd() * 3, cor: Math.floor(rnd() * 6), p: pts, f, patio, corPlat: PLATIBANDA[Math.floor(rnd() * PLATIBANDA.length)] });
             } else {
-              const muro = rnd() < 0.85 ? [[cx + tx * (-frente / 2) + nx * calc, cz + tz * (-frente / 2) + nz * calc], [cx + tx * (frente / 2) + nx * calc, cz + tz * (frente / 2) + nz * calc]] : null;
-              lista.push({ tipo: 'casa', h: s < 0.82 ? 2.9 + rnd() * 0.6 : 5.8 + rnd() * 0.6, cor: Math.floor(rnd() * 10), p: pts, f, muro });
+              if (caixa) {
+                lista.push({ tipo: 'casa', estilo: 'caixa', h: s < 0.8 ? 3.4 + rnd() * 0.5 : 6.4 + rnd() * 0.5, cor: Math.floor(rnd() * 10), p: pts, f,
+                  modelo: Math.floor(rnd() * 4), cima: Math.floor(rnd() * 4), espelho: rnd() < 0.5 });
+              } else {
+                const muro = rnd() < 0.85 ? muroFrente : null;
+                lista.push({ tipo: 'casa', h: s < 0.82 ? 2.9 + rnd() * 0.6 : 5.8 + rnd() * 0.6, cor: Math.floor(rnd() * 10), p: pts, f, muro });
+              }
             }
           }
           acc -= L;
@@ -404,6 +442,51 @@ export class Mundo {
     mPoca.renderOrder = 2;
     this.grupo.add(mPoste, mLuz, mPoca);
     for (const [x, z] of lista) this.addCirculo(x, z, 0.25);
+    this.postesCanteiro(ruas, poucos);
+  }
+
+  // PA-160 e pistas duplicadas largas: postes altos de dois braços no canteiro central
+  postesCanteiro(ruas, poucos) {
+    const lista = [], ocupado = new Grade(30), passo = poucos ? 48 : 38;
+    for (const r of ruas) {
+      if (!(r.mao && r.c >= 4)) continue;
+      let acc = passo * rnd();
+      for (let i = 1; i < r.p.length; i++) {
+        const a = r.p[i - 1], b = r.p[i];
+        const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz); if (L < 0.1) continue;
+        const nx = dz / L, nz = -dx / L;                 // esquerda de quem dirige = lado do canteiro
+        while (acc < L) {
+          const x = a[0] + dx * acc / L + nx * (r.w / 2 + 1.6), z = a[1] + dz * acc / L + nz * (r.w / 2 + 1.6);
+          let livre = Math.hypot(x, z) < this.raio && this.infoRua(x, z, 10).dist > 4.6;
+          for (const o of ocupado.perto(x, z, 26)) if (Math.hypot(o[0] - x, o[1] - z) < 26) { livre = false; break; }
+          if (livre) { const p = [x, z, Math.atan2(nx, nz)]; lista.push(p); ocupado.add(p, x, z, x, z); }
+          acc += passo;
+        }
+        acc -= L;
+      }
+    }
+    if (!lista.length) return;
+    const n = lista.length, H = 11.5;
+    const geoPoste = mergeGeometries([
+      new THREE.CylinderGeometry(0.11, 0.2, H, 8).translate(0, H / 2, 0),
+      new THREE.BoxGeometry(0.1, 0.1, 5.2).translate(0, H - 0.2, 0),                       // braço duplo, um para cada pista
+      new THREE.BoxGeometry(0.4, 0.5, 0.4).translate(0, 0.25, 0),                          // base de concreto
+    ]);
+    const mPoste = new THREE.InstancedMesh(geoPoste, new THREE.MeshStandardMaterial({ color: 0x9a9da1, roughness: 0.5, metalness: 0.3 }), n);
+    const geoLuz = mergeGeometries([new THREE.BoxGeometry(0.4, 0.16, 0.8).translate(0, H - 0.35, 2.5), new THREE.BoxGeometry(0.4, 0.16, 0.8).translate(0, H - 0.35, -2.5)]);
+    const mLuz = new THREE.InstancedMesh(geoLuz, new THREE.MeshBasicMaterial({ color: 0xffe2b0 }), n);
+    const gPoca = new THREE.PlaneGeometry(30, 30).rotateX(-Math.PI / 2);
+    const geoPoca = mergeGeometries([gPoca.clone().translate(0, 0.095, 4.5), gPoca.clone().translate(0, 0.095, -4.5)]);
+    const mPoca = new THREE.InstancedMesh(geoPoca,
+      new THREE.MeshBasicMaterial({ map: texGlow(), color: 0xffb060, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }), n);
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), um = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
+    lista.forEach(([x, z, ang], i) => {
+      q.setFromAxisAngle(up, ang); m.compose(new THREE.Vector3(x, 0, z), q, um);
+      mPoste.setMatrixAt(i, m); mLuz.setMatrixAt(i, m); mPoca.setMatrixAt(i, m);
+    });
+    mPoca.renderOrder = 2;
+    this.grupo.add(mPoste, mLuz, mPoca);
+    for (const [x, z] of lista) this.addCirculo(x, z, 0.35);
   }
 
   addPoligono(pts) {
