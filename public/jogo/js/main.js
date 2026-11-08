@@ -133,6 +133,7 @@ async function iniciar() {
   try { garagem.projeto = await (await fetch(comVersao('dados/projeto.json'))).json(); } catch (e) { console.warn('projeto.json', e); }
   garagem.aplicar(carro);
   carreira = new Carreira();
+  aplicarAssist();
   ajustarRival(); ajustarPolicia();
   mostrarGrana();
   som = new Som();
@@ -274,6 +275,7 @@ function ligarAcoes() {
     arrancada: () => jogar('arrancada'),
     garagem: () => abrirGaragem(),
     online: () => abrirOnline(),
+    assist: () => { let f = lerFacil(); f = !f; try { localStorage.setItem('direcao-facil', f ? '1' : '0'); } catch {} aplicarAssist(); },
     camera: () => { camModo = (camModo + 1) % CAMS.length; },
     som: () => { som.iniciar(); som.mudo = !som.mudo; document.querySelector('[data-acao=som]').classList.toggle('mudo', som.mudo); },
     reset: () => {
@@ -372,6 +374,15 @@ function abrirGaragem() {
     garagem.fechar(); document.body.classList.remove('garagem');
     modo = 'menu'; menu.classList.add('on'); mostrarGrana();
   });
+}
+
+// ---------- direção assistida (Fácil por padrão; o filho do usuário achou difícil controlar o carro)
+const lerFacil = () => { try { return localStorage.getItem('direcao-facil') !== '0'; } catch { return true; } };
+function aplicarAssist() {
+  const f = lerFacil(); carro.assist = f ? 1 : 0;
+  const b = document.getElementById('bt-assist');
+  if (b) b.innerHTML = f ? 'Direção: Fácil<small>O carro acompanha a rua sozinho e raspa no muro sem parar. Toque para trocar</small>'
+    : 'Direção: Normal<small>Sem ajuda: você faz tudo no volante. Toque para trocar</small>';
 }
 
 // ---------- online
@@ -605,7 +616,9 @@ function loop(t) {
       if (rInp) { rival.carro.update(PASSO, rInp, mundo); colisaoCarros(carro, rival.carro); if (transito.ativo) transito.colidir(rival.carro); }
       for (const p of viaturas) {
         p.carro.update(PASSO, p.inp, mundo);
-        if (colisaoCarros(carro, p.carro) > 0.2) policia.infracao('bateuPolicia');
+        const hb = colisaoCarros(carro, p.carro);
+        if (hb > 0.2) policia.infracao('bateuPolicia');
+        if (hb > 0.08) policia.batida(Math.abs(carro.vf));
         if (transito.ativo) transito.colidir(p.carro);
       }
       if (transito.ativo) { const b = transito.colidir(carro); if (b) policia.infracao('bateuTransito'); }

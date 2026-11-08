@@ -144,15 +144,26 @@ export class Policia {
       if (this.nivel >= 2) { const p2 = this.v.find(p => p.modo === 'fora'); if (p2 && this.aparecer(p2, jog, 120, 200)) p2.modo = 'caca'; }
       const caca = this.v.filter(p => p.modo === 'caca');
       const dmin = Math.min(...caca.map(p => Math.hypot(p.carro.pos.x - jog.pos.x, p.carro.pos.z - jog.pos.z)), 999);
-      // enquadro: viatura colada e você parado
-      if (dmin < 12 && Math.abs(jog.vf) < 3) this.tEnquadro += dt; else this.tEnquadro = Math.max(0, this.tEnquadro - dt * 2);
+      // enquadro: viatura colada e você devagar (até ~20 km/h), ou as batidas dela (batida()) vão enchendo
+      const vj = Math.abs(jog.vf);
+      if (dmin < 9 && vj < 11) this.tEnquadro += dt * (vj < 5.5 ? 1 : 0.5);    // até 40 km/h colado já vai enchendo
+      else if (dmin < 7 && vj < 22) this.tEnquadro += dt * 0.3;                  // colada muito tempo, até ~80 km/h
+      else if (dmin > 14) this.tEnquadro = Math.max(0, this.tEnquadro - dt * 0.6);   // só esvazia abrindo distância
+      this.tBatida = Math.max(0, (this.tBatida || 0) - dt);
       // fuga: longe de todas
       if (dmin > 170) this.tFuga += dt; else if (dmin < 110) this.tFuga = 0;
-      if (this.tEnquadro > 2.5) { const n = this.nivel; this.encerrar(jog); this.aoEnquadrar && this.aoEnquadrar(n); }
+      if (this.tEnquadro > 2.2) { const n = this.nivel; this.encerrar(jog); this.aoEnquadrar && this.aoEnquadrar(n); }
       else if (this.tFuga > 10) { const n = this.nivel; this.encerrar(jog); this.aoFugir && this.aoFugir(n); }
       this.dmin = dmin;
     }
     this.mostrar();
+  }
+
+  // viatura bateu no seu carro durante a perseguição: conta para o enquadro se você não estiver rápido
+  batida(vJog) {
+    if (this.nivel === 0 || this.tBatida > 0) return;
+    this.tBatida = 0.5;
+    if (vJog < 23) this.tEnquadro += vJog < 9 ? 0.9 : vJog < 17 ? 0.6 : 0.4;     // até ~80 km/h a batida conta
   }
 
   encerrar(jog) {
@@ -192,8 +203,10 @@ export class Policia {
     if (Math.abs(erro) > 1.0) vAlvo = Math.min(vAlvo, 7);
     if (bravo) {
       // jogador devagar: chega freando a tempo (distância de frenagem) e para do lado; correndo: cola nele
-      if (vJog < 8) vAlvo = Math.min(vAlvo, Math.sqrt(2 * 8 * Math.max(0, dJog - 7)) + vJog);
-      else if (dJog < 35) vAlvo = Math.max(vAlvo, vJog + 4);
+      if (vJog < 8) vAlvo = Math.min(vAlvo, Math.sqrt(2 * 8 * Math.max(0, dJog - 4)) + vJog);
+      else if (dJog < 35) vAlvo = Math.max(vAlvo, Math.min(vJog + 4, vMax * 1.1));   // cola, mas no limite da viatura: correndo dá para fugir
+      // colada atrás: acompanha sem empurrar (empurrando, o carro do jogador ganhava velocidade e nunca era pego)
+      if (dJog < 6) vAlvo = Math.min(vAlvo, vJog - 0.3); else if (dJog < 7.5) vAlvo = Math.min(vAlvo, vJog + 0.6);
     }
     const v = c.vf;
     let acel = 0, freio = 0;
@@ -201,7 +214,7 @@ export class Policia {
     // presa: dá ré um pouco, depois tenta de novo
     if (Math.abs(v) < 1.0 && acel > 0) p.preso += dt; else p.preso = Math.max(0, p.preso - dt);
     let dir = lim(erro * 2.4, -1, 1), mao = false;
-    if (bravo && dJog < 10 && vJog < 3) { Object.assign(inp, { acel: 0, freio: v > 0.5 ? 1 : 0, dir: 0, mao: v <= 0.5 }); p.preso = 0; return; }   // já encostou
+    if (bravo && dJog < 5.5 && vJog < 3) { Object.assign(inp, { acel: 0, freio: v > 0.5 ? 1 : 0, dir: 0, mao: v <= 0.5 }); p.preso = 0; return; }   // já encostou
     // alvo atrás: cavalo de pau (esterço todo, um pouco de freio de mão) em vez de ficar indo e voltando
     if (Math.abs(erro) > 1.6 && bravo) { dir = Math.sign(erro); acel = 0.8; freio = 0; mao = v > 6; }
     if (p.preso > 1.5) { acel = 0; freio = 1; dir = -dir; mao = false; if (p.preso > 3) p.preso = 0; }
@@ -215,7 +228,7 @@ export class Policia {
     if (this.nivel > 0) {
       const k = '★'.repeat(this.nivel) + '☆'.repeat(3 - this.nivel);
       if (el.estrelas.textContent !== k) el.estrelas.textContent = k;
-      const txt = this.tEnquadro > 0.3 ? 'Encostando… acelera!' : this.tFuga > 0 ? `Despistando… ${Math.ceil(10 - this.tFuga)} s` : `Polícia a ${Math.round(this.dmin || 0)} m`;
+      const txt = this.tEnquadro > 0.2 ? `ENQUADRANDO ${'▮'.repeat(Math.min(5, Math.ceil(this.tEnquadro / 2.2 * 5)))}${'▯'.repeat(Math.max(0, 5 - Math.ceil(this.tEnquadro / 2.2 * 5)))} acelera!` : this.tFuga > 0 ? `Despistando… ${Math.ceil(10 - this.tFuga)} s` : `Polícia a ${Math.round(this.dmin || 0)} m`;
       if (el.txt.textContent !== txt) el.txt.textContent = txt;
     }
   }

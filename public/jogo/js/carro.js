@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { UNO } from './modelos.js';
 
+const embrulhar = a => Math.atan2(Math.sin(a), Math.cos(a));
 const MARCHAS = [12.5, 21, 29.5, 38, 49];     // m/s no corte de cada marcha (Uno; os outros esticam pela vmax)
 
 export class Carro {
@@ -127,7 +128,7 @@ export class Carro {
     const M = this.mods || {};                                       // peças da garagem (garagem.js)
     const F = this.ficha;
     const vmax = (naTerra ? Math.min(30, F.vmax * 0.65) : F.vmax + (M.vmax || 0)) * (1 - 0.2 * (this.avaria || 0));   // avariado no canteiro: perde velocidade
-    const aderencia = inp.mao ? 1.3 : (naTerra ? 4.2 : 9) * (M.grip || 1) * F.grip;
+    const aderencia = inp.mao ? 1.3 : (naTerra ? 4.2 : 9) * (M.grip || 1) * F.grip * (this.assist ? 1.25 : 1);
 
     // nitro: empurrão forte e mais velocidade final enquanto tem no cilindro (uns 3 s cheio)
     const nitroOn = !!inp.nitro && this.nitro > 0.01 && vf > 2 && !inp.parado;
@@ -152,9 +153,26 @@ export class Carro {
     if (naTerra && Math.abs(vf) > vmax) ac -= Math.sign(vf) * 6;
     vf += ac * dt;
 
+    // direção assistida (modo Fácil, só no carro do jogador): sem mão no volante o carro acompanha a rua
+    // e volta para a faixa; com volante, só segura quando está saindo pela beira
+    let dirIn = inp.dir;
+    if (this.assist && info.rua && !naTerra && Math.abs(vf) > 3 && !inp.mao) {
+      let rumo = info.dir; if (Math.cos(rumo - this.ang) < 0) rumo += Math.PI;
+      const erro = embrulhar(rumo - this.ang);
+      if (Math.abs(erro) < 0.6) {
+        const ex = Math.cos(rumo), ez = -Math.sin(rumo);                       // esquerda da rua
+        const lado = (this.pos.x - info.x) * ex + (this.pos.z - info.z) * ez;  // + = à esquerda do eixo
+        const meia = info.rua.w / 2, alvoLado = info.rua.mao ? 0 : -meia / 2;   // mão dupla: faixa da direita
+        const sobra = meia - Math.abs(lado);                                    // quanto falta para a beira
+        const corr = erro * 1.5 + Math.max(-0.35, Math.min(0.35, (alvoLado - lado) * 0.09));
+        if (Math.abs(inp.dir) < 0.05) dirIn = corr * this.assist;
+        else if (sobra < 1.6 && Math.sign(inp.dir) === Math.sign(lado) && Math.sign(erro) !== Math.sign(lado)) dirIn = inp.dir * 0.4 + corr * 0.6 * this.assist;
+        dirIn = Math.max(-1, Math.min(1, dirIn));
+      }
+    }
     // direção: menos esterço em alta
     const dMax = 0.62 / (1 + Math.abs(vf) * 0.055);
-    const alvo = inp.dir * dMax + (this.avaria || 0) * 0.03 * Math.min(1, Math.abs(vf) / 8);   // suspensão torta puxa para a esquerda
+    const alvo = dirIn * dMax + (this.avaria || 0) * 0.03 * Math.min(1, Math.abs(vf) / 8);   // suspensão torta puxa para a esquerda
     this.dir += (alvo - this.dir) * Math.min(1, dt * (inp.analogico ? 18 : 10));
     let wAlvo = vf * Math.tan(this.dir) / F.eixo;
     if (inp.mao && Math.abs(vf) > 7) wAlvo *= 1.7;
@@ -187,9 +205,16 @@ export class Carro {
     if (bateu) {
       const vn = this.vel.x * bateu.x + this.vel.y * bateu.z;
       if (vn < 0) {
-        this.vel.x -= vn * 1.25 * bateu.x; this.vel.y -= vn * 1.25 * bateu.z;
-        this.vel.multiplyScalar(0.8);
+        // Fácil: raspa e segue junto do muro (sem quicar) e o carro se endireita com a parede
+        const v0 = Math.hypot(this.vel.x, this.vel.y) || 1, frontal = Math.min(1, -vn / v0);
+        const rebote = this.assist ? 1.02 : 1.25;
+        this.vel.x -= vn * rebote * bateu.x; this.vel.y -= vn * rebote * bateu.z;
+        this.vel.multiplyScalar(this.assist ? 0.95 - 0.25 * frontal : 0.8);
         this.w *= 0.5;
+        if (this.assist && frontal < 0.7) {
+          const v1 = Math.hypot(this.vel.x, this.vel.y);
+          if (v1 > 3) { const rv = Math.atan2(this.vel.x, this.vel.y); if (Math.cos(rv - this.ang) > 0) this.ang += embrulhar(rv - this.ang) * 0.35; }
+        }
         this.choque = Math.max(this.choque, Math.min(1, -vn / 14));
       }
     }
