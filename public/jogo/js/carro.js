@@ -1,0 +1,223 @@
+// Uno 1.6R: modelo, física arcade e som do motor.
+// Rumo (ang) = rotation.y; frente do carro = (sin ang, cos ang); +x local = lado esquerdo.
+import * as THREE from 'three';
+
+const ENTRE_EIXOS = 2.36;
+const RAIO_RODA = 0.286;
+const MARCHAS = [12.5, 21, 29.5, 38, 49];     // m/s no corte de cada marcha
+const CENTRO = 0.333;                          // meio do entre-eixos no modelo
+
+export class Carro {
+  constructor(gltf, scene) {
+    this.grupo = new THREE.Group();
+    this.corpo = new THREE.Group();            // recebe rolagem e arfagem
+    this.grupo.add(this.corpo);
+    const m = gltf.scene;
+    m.position.z = -CENTRO;
+    this.corpo.add(m);
+    scene.add(this.grupo);
+
+    this.rodas = [];
+    for (const nome of ['roda_dianteira_esq', 'roda_dianteira_dir', 'roda_traseira_esq', 'roda_traseira_dir']) {
+      const w = m.getObjectByName(nome);
+      if (!w) continue;
+      const piv = new THREE.Group(); piv.position.copy(w.position);
+      w.parent.add(piv); piv.add(w); w.position.set(0, 0, 0);
+      this.rodas.push({ piv, w, frente: nome.includes('dianteira') });
+    }
+    this.lanternas = []; this.farois = [];
+    m.traverse(o => {
+      if (!o.isMesh) return;
+      const ms = Array.isArray(o.material) ? o.material : [o.material];
+      ms.forEach((mt, i) => {
+        if (mt.name === 'lensR' || mt.name === 'lensRedGlass') {
+          const c = mt.clone(); c.emissive = new THREE.Color(0xff1010); c.emissiveIntensity = 0.5;
+          if (Array.isArray(o.material)) o.material[i] = c; else o.material = c;
+          this.lanternas.push(c);
+        } else if (mt.name === 'lensF' || mt.name === 'lensClear') {
+          mt.emissive = new THREE.Color(0xfff4dd); mt.emissiveIntensity = mt.name === 'lensF' ? 2.2 : 0.6; this.farois.push(mt);
+        }
+        if (mt.map) mt.map.anisotropy = 4;
+        // partes da lataria vieram com faces invertidas (as laterais do teto sumiam vistas de cima)
+        if (['paint', 'grafite', 'plastic', 'chrome'].includes(mt.name)) mt.side = THREE.DoubleSide;
+      });
+    });
+
+    // farol: um spot só, para não pesar no celular
+    const farol = new THREE.SpotLight(0xfff1d6, 160, 70, 0.62, 0.55, 1.4);
+    farol.position.set(0, 0.75, 1.9); farol.target.position.set(0, 0, 18);
+    this.grupo.add(farol, farol.target);
+    // brilho no chão à frente (barato e dá leitura de farol aceso)
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d'); const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    const poca = new THREE.Mesh(new THREE.PlaneGeometry(7, 14).rotateX(-Math.PI / 2).translate(0, 0.1, 9),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), color: 0xfff0d0, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.grupo.add(poca);
+    const fr = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.6).rotateX(-Math.PI / 2).translate(0, 0.1, -2.6),
+      new THREE.MeshBasicMaterial({ map: poca.material.map, color: 0xff2020, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.grupo.add(fr); this.brilhoFreio = fr.material;
+
+    this.reset(0, 0, 0);
+  }
+
+  reset(x, z, ang) {
+    this.pos = new THREE.Vector3(x, 0, z);
+    this.vel = new THREE.Vector2(0, 0);   // (x, z) no mundo
+    this.ang = ang; this.w = 0; this.dir = 0;
+    this.vf = 0; this.vl = 0; this.giro = 0; this.marcha = 1; this.rpm = 900;
+    this.rol = 0; this.arf = 0; this.choque = 0; this.foraDaRua = false; this.rua = null;
+    this.atualizarModelo(0);
+  }
+
+  update(dt, inp, mundo) {
+    const f = new THREE.Vector2(Math.sin(this.ang), Math.cos(this.ang));
+    const e = new THREE.Vector2(Math.cos(this.ang), -Math.sin(this.ang));   // esquerda
+    let vf = this.vel.dot(f), vl = this.vel.dot(e);
+
+    const info = mundo.infoRua(this.pos.x, this.pos.z, 30);
+    this.rua = info.rua;
+    const naTerra = !info.rua || info.dist > info.rua.w / 2 + 2.2 || info.rua.terra;
+    this.foraDaRua = naTerra;
+    const vmax = naTerra ? 30 : 49;
+    const aderencia = inp.mao ? 1.3 : naTerra ? 4.2 : 9;
+
+    // motor, freio e ré
+    let ac = 0;
+    if (inp.acel > 0) {
+      if (vf < -0.5) ac = 11 * inp.acel;
+      else ac = inp.acel * 4.6 * Math.max(0, 1 - Math.pow(Math.max(vf, 0) / vmax, 1.7)) * (naTerra ? 0.8 : 1);
+    }
+    if (inp.freio > 0) {
+      if (vf > 0.6) ac -= 11 * inp.freio;
+      else ac -= 3.4 * inp.freio * (vf > -9 ? 1 : 0);          // ré até ~32 km/h
+    }
+    if (!inp.acel && !inp.freio) ac -= Math.sign(vf) * Math.min(Math.abs(vf) / dt, 0.9 + Math.abs(vf) * 0.02);
+    if (inp.mao) ac -= Math.sign(vf) * Math.min(Math.abs(vf) / dt, 4);
+    if (naTerra && Math.abs(vf) > vmax) ac -= Math.sign(vf) * 6;
+    vf += ac * dt;
+
+    // direção: menos esterço em alta
+    const dMax = 0.62 / (1 + Math.abs(vf) * 0.055);
+    const alvo = inp.dir * dMax;
+    this.dir += (alvo - this.dir) * Math.min(1, dt * (inp.analogico ? 14 : 7));
+    let wAlvo = vf * Math.tan(this.dir) / ENTRE_EIXOS;
+    if (inp.mao && Math.abs(vf) > 7) wAlvo *= 1.7;
+    this.w += (wAlvo - this.w) * Math.min(1, dt * (inp.mao ? 3 : 10));
+
+    // derrapagem: o lateral morre conforme a aderência
+    const vlAntes = vl;
+    vl *= Math.exp(-aderencia * dt);
+    vf -= Math.sign(vf) * Math.min(Math.abs(vf), Math.abs(vlAntes - vl) * 0.35);
+    this.vel.set(f.x * vf + e.x * vl, f.y * vf + e.y * vl);
+
+    this.ang += this.w * dt;
+    this.pos.x += this.vel.x * dt; this.pos.z += this.vel.y * dt;
+
+    // colisão: três círculos ao longo do carro
+    const nf = new THREE.Vector2(Math.sin(this.ang), Math.cos(this.ang));
+    let bateu = null;
+    for (const off of [1.35, 0, -1.25]) {
+      const p = { x: this.pos.x + nf.x * off, z: this.pos.z + nf.y * off };
+      const ox = p.x, oz = p.z;
+      const n = mundo.colidir(p, 0.86);
+      if (n) { this.pos.x += p.x - ox; this.pos.z += p.z - oz; bateu = n; }
+    }
+    if (bateu) {
+      const vn = this.vel.x * bateu.x + this.vel.y * bateu.z;
+      if (vn < 0) {
+        this.vel.x -= vn * 1.25 * bateu.x; this.vel.y -= vn * 1.25 * bateu.z;
+        this.vel.multiplyScalar(0.8);
+        this.w *= 0.5;
+        this.choque = Math.max(this.choque, Math.min(1, -vn / 14));
+      }
+    }
+    // borda do mapa
+    const r = Math.hypot(this.pos.x, this.pos.z), lim = mundo.raio + 40;
+    if (r > lim) { this.pos.x *= lim / r; this.pos.z *= lim / r; this.vel.multiplyScalar(0.5); }
+
+    // estado para HUD e som
+    const ef = new THREE.Vector2(Math.sin(this.ang), Math.cos(this.ang)), ee = new THREE.Vector2(Math.cos(this.ang), -Math.sin(this.ang));
+    const novoVf = this.vel.dot(ef);
+    this.acLong = (novoVf - this.vf) / dt;
+    this.vf = novoVf; this.vl = this.vel.dot(ee);
+    const v = Math.abs(this.vf);
+    let m = 0; while (m < MARCHAS.length - 1 && v > MARCHAS[m]) m++;
+    this.marcha = this.vf < -0.5 ? 'R' : m + 1;
+    const lo = m ? MARCHAS[m - 1] * 0.55 : 0;
+    const rpmAlvo = 900 + Math.max(0, (v - lo) / (MARCHAS[m] - lo)) * 5900 * (m ? 1 : 1) + (inp.acel && v < 2 ? 2200 * inp.acel : 0);
+    this.rpm += (Math.min(7000, rpmAlvo) - this.rpm) * Math.min(1, dt * 8);
+    this.derrapando = Math.min(1, Math.max(0, (Math.abs(this.vl) - 2.2) / 6)) * (v > 4 ? 1 : 0);
+    this.freando = inp.freio > 0 && this.vf > 0.5;
+    this.choque = Math.max(0, this.choque - dt * 2.5);
+    this.atualizarModelo(dt, inp);
+  }
+
+  atualizarModelo(dt, inp = {}) {
+    this.grupo.position.copy(this.pos);
+    this.grupo.rotation.y = this.ang;
+    const lat = (this.w || 0) * (this.vf || 0);
+    this.rol += (THREE.MathUtils.clamp(-lat * 0.006, -0.06, 0.06) - this.rol) * Math.min(1, dt * 6);
+    this.arf += (THREE.MathUtils.clamp(-(this.acLong || 0) * 0.004, -0.035, 0.035) - this.arf) * Math.min(1, dt * 5);
+    this.corpo.rotation.z = this.rol; this.corpo.rotation.x = this.arf;
+    this.giro += (this.vf || 0) / RAIO_RODA * dt;
+    for (const r of this.rodas) {
+      r.w.rotation.x = this.giro;
+      if (r.frente) r.piv.rotation.y = this.dir;
+    }
+    const fr = this.freando ? 2.8 : 0.5;
+    for (const l of this.lanternas) l.emissiveIntensity = fr;
+    if (this.brilhoFreio) this.brilhoFreio.opacity = this.freando ? 0.5 : 0.12;
+  }
+
+  get kmh() { return Math.abs(this.vf) * 3.6; }
+}
+
+// ---------- som: motor sintetizado (sem arquivo de áudio), pneu e batida
+export class Som {
+  constructor() { this.ok = false; this.mudo = false; }
+  iniciar() {
+    if (this.ok) { this.ctx.resume(); return; }
+    const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+    const ctx = this.ctx = new C();
+    this.master = ctx.createGain(); this.master.gain.value = 0.55; this.master.connect(ctx.destination);
+    const filtro = this.filtro = ctx.createBiquadFilter(); filtro.type = 'lowpass'; filtro.frequency.value = 600; filtro.Q.value = 2;
+    const dist = ctx.createWaveShaper(); const k = 18, curva = new Float32Array(256);
+    for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curva[i] = (1 + k) * x / (1 + k * Math.abs(x)); }
+    dist.curve = curva;
+    this.gMotor = ctx.createGain(); this.gMotor.gain.value = 0.12;
+    this.o1 = ctx.createOscillator(); this.o1.type = 'sawtooth';
+    this.o2 = ctx.createOscillator(); this.o2.type = 'square';
+    const g2 = ctx.createGain(); g2.gain.value = 0.5;
+    this.o1.connect(dist); this.o2.connect(g2); g2.connect(dist); dist.connect(filtro); filtro.connect(this.gMotor); this.gMotor.connect(this.master);
+    this.o1.start(); this.o2.start();
+    // ruído para pneu e batida
+    const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    this.ruido = buf;
+    const n = ctx.createBufferSource(); n.buffer = buf; n.loop = true;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1900; bp.Q.value = 6;
+    this.gPneu = ctx.createGain(); this.gPneu.gain.value = 0;
+    n.connect(bp); bp.connect(this.gPneu); this.gPneu.connect(this.master); n.start();
+    this.ok = true;
+  }
+  update(carro, acel) {
+    if (!this.ok) return;
+    const t = this.ctx.currentTime, f = carro.rpm / 60 * 2;
+    this.o1.frequency.setTargetAtTime(f, t, 0.03);
+    this.o2.frequency.setTargetAtTime(f / 2, t, 0.03);
+    this.filtro.frequency.setTargetAtTime(380 + carro.rpm * 0.28 + acel * 500, t, 0.05);
+    this.gMotor.gain.setTargetAtTime(0.07 + acel * 0.09, t, 0.05);
+    this.gPneu.gain.setTargetAtTime(carro.derrapando * 0.22, t, 0.05);
+    this.master.gain.setTargetAtTime(this.mudo ? 0 : 0.55, t, 0.05);
+  }
+  batida(forca) {
+    if (!this.ok || this.mudo) return;
+    const s = this.ctx.createBufferSource(); s.buffer = this.ruido;
+    const lp = this.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700;
+    const g = this.ctx.createGain(); const t = this.ctx.currentTime;
+    g.gain.setValueAtTime(0.6 * forca, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    s.connect(lp); lp.connect(g); g.connect(this.master); s.start(t); s.stop(t + 0.4);
+  }
+  pausar() { if (this.ok) this.ctx.suspend(); }
+}
