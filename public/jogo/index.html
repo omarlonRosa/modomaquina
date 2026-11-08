@@ -4,13 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Racha Parauapebas · Modo Máquina</title>
 <meta name="description" content="Protótipo de jogo de racha no navegador, nas ruas de Parauapebas (PA), saindo da Lock-Up Auto Center.">
 <style>
   :root { --laranja: #e8541c; --fundo: #0b1020; --texto: #f4f2ee; }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--fundo); color: var(--texto);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+  html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; -webkit-text-size-adjust: 100%; background: var(--fundo); color: var(--texto);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; touch-action: none; position: fixed; inset: 0; width: 100%; user-select: none; -webkit-user-select: none; }
   #tela canvas { display: block; position: fixed; inset: 0; }
   button { font: inherit; color: inherit; cursor: pointer; }
 
@@ -49,7 +52,7 @@
   #mini { left: max(16px, env(safe-area-inset-left)); bottom: 18px; width: 150px; height: 150px; border-radius: 50%; box-shadow: 0 0 0 3px #ffffff30, 0 4px 18px #0008; }
   #rua { left: 50%; top: 16px; transform: translate(-50%, -10px); opacity: 0; transition: .35s; background: #0b1020b3; padding: 7px 14px; border-radius: 8px; font-weight: 700; white-space: nowrap; border-left: 4px solid var(--laranja); }
   #rua.on { opacity: 1; transform: translate(-50%, 0); }
-  #aviso { left: 50%; top: 34%; transform: translate(-50%, -50%) scale(.9); opacity: 0; transition: .25s; font-size: clamp(26px, 7vw, 52px); font-weight: 900; font-style: italic; text-align: center; text-shadow: 0 3px 16px #000c; white-space: nowrap; }
+  #aviso { left: 50%; top: 34%; transform: translate(-50%, -50%) scale(.9); opacity: 0; transition: .25s; font-size: clamp(22px, 5vw, 52px); font-weight: 900; font-style: italic; text-align: center; text-shadow: 0 3px 16px #000c; width: max-content; max-width: 92vw; line-height: 1.05; }
   #aviso.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   #painel-racha { left: 50%; top: 58px; transform: translateX(-50%); text-align: center; display: none; }
   body.jogando #painel-racha.on { display: block; }
@@ -67,11 +70,11 @@
   body.toque.jogando .toques { display: block; }
   .tq { position: fixed; z-index: 11; border-radius: 18px; border: 2px solid #ffffff38; background: #0b10207a; display: grid; place-items: center; font-weight: 800; font-size: 15px; touch-action: none; }
   .tq.ativo { background: #e8541ccc; border-color: #fff8; }
-  .tq.esq { left: max(14px, env(safe-area-inset-left)); bottom: 22px; width: 84px; height: 84px; font-size: 30px; }
-  .tq.dir { left: calc(max(14px, env(safe-area-inset-left)) + 96px); bottom: 22px; width: 84px; height: 84px; font-size: 30px; }
-  .tq.acel { right: max(14px, env(safe-area-inset-right)); bottom: 22px; width: 92px; height: 120px; }
-  .tq.freio { right: calc(max(14px, env(safe-area-inset-right)) + 104px); bottom: 22px; width: 80px; height: 84px; }
-  .tq.mao { right: calc(max(14px, env(safe-area-inset-right)) + 104px); bottom: 118px; width: 80px; height: 50px; font-size: 12px; }
+  .tq.esq { left: max(14px, env(safe-area-inset-left)); bottom: max(18px, env(safe-area-inset-bottom)); width: 96px; height: 96px; font-size: 32px; }
+  .tq.dir { left: calc(max(14px, env(safe-area-inset-left)) + 108px); bottom: max(18px, env(safe-area-inset-bottom)); width: 96px; height: 96px; font-size: 32px; }
+  .tq.acel { right: max(14px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom)); width: 100px; height: 130px; }
+  .tq.freio { right: calc(max(14px, env(safe-area-inset-right)) + 112px); bottom: max(18px, env(safe-area-inset-bottom)); width: 86px; height: 90px; }
+  .tq.mao { right: calc(max(14px, env(safe-area-inset-right)) + 112px); bottom: calc(max(18px, env(safe-area-inset-bottom)) + 102px); width: 86px; height: 54px; font-size: 12px; }
   body.toque #velo { right: auto; left: 50%; transform: translateX(-50%); bottom: 14px; text-align: center; }
   body.toque #vel { font-size: 38px; }
   body.toque #mini { bottom: auto; top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); width: 110px; height: 110px; }

@@ -16,7 +16,9 @@ const progresso = (f, txt) => { barra.style.width = Math.round(f * 100) + '%'; i
 
 const renderer = new THREE.WebGLRenderer({ antialias: !celular, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, celular ? 1.5 : 2));
-renderer.setSize(innerWidth, innerHeight);
+// tamanho pela área da página e não pela janela visível: se o navegador der zoom, o jogo não encolhe
+const tamanho = () => [document.documentElement.clientWidth || innerWidth, document.documentElement.clientHeight || innerHeight];
+renderer.setSize(...tamanho());
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.3;
@@ -25,7 +27,7 @@ document.getElementById('tela').appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b1020);
 scene.fog = new THREE.FogExp2(0x1a2236, 0.0032);
-const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 1400);
+const camera = new THREE.PerspectiveCamera(62, tamanho()[0] / tamanho()[1], 0.1, 1400);
 
 // noite: luz ambiente azulada, lua fraca, céu com gradiente
 scene.add(new THREE.HemisphereLight(0x7d8fbf, 0x4a2a1a, 1.25));
@@ -95,6 +97,7 @@ async function iniciar() {
 function ligarAcoes() {
   const menu = document.getElementById('menu'), fim = document.getElementById('fim');
   const jogar = (tipo) => {
+    telaCheia();
     som.iniciar();
     menu.classList.remove('on'); fim.classList.remove('on');
     document.body.classList.add('jogando');
@@ -173,7 +176,7 @@ function loop(t) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (t - ultimo) / 1000); ultimo = t;
   if (document.hidden) return;
-  const inp = modo === 'menu' ? { acel: 0, freio: 0, dir: 0, mao: false } : controles.ler();
+  const inp = modo === 'menu' ? { acel: 0, freio: 0, dir: 0, mao: false } : controles.ler(dt, carro.kmh);
   if (modo !== 'menu') {
     acc += dt;
     while (acc >= PASSO) { carro.update(PASSO, inp, mundo); acc -= PASSO; }
@@ -188,10 +191,33 @@ function loop(t) {
   fpsN++; fpsT += dt; if (fpsT > 1) { window._fps = fpsN / fpsT; fpsN = 0; fpsT = 0; }
 }
 
-addEventListener('resize', () => {
-  renderer.setSize(innerWidth, innerHeight);
-  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+function redimensionar() {
+  const [w, h] = tamanho();
+  renderer.setSize(w, h);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', redimensionar);
+addEventListener('orientationchange', () => setTimeout(redimensionar, 300));
+// se mesmo assim o celular der zoom (o Safari ignora user-scalable=no), reescreve o viewport, que volta ao normal
+const metaVp = document.querySelector('meta[name=viewport]');
+if (window.visualViewport) visualViewport.addEventListener('resize', () => {
+  if (visualViewport.scale > 1.02) {
+    const c = metaVp.content; metaVp.content = c + ', minimum-scale=1';
+    setTimeout(() => { metaVp.content = c; }, 50);
+  }
 });
+// no celular, tela cheia e deitado (Android; no iPhone o Safari não deixa, aí vale o aviso de girar)
+function telaCheia() {
+  if (!celular || document.fullscreenElement) return;
+  const el = document.documentElement;
+  const pedir = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (!pedir) return;
+  try {
+    Promise.resolve(pedir.call(el, { navigationUI: 'hide' }))
+      .then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'))
+      .catch(() => {});
+  } catch (e) {}
+}
 document.addEventListener('visibilitychange', () => { if (document.hidden && som) som.pausar(); else if (som && modo !== 'menu') som.iniciar(); });
 
 iniciar().catch(e => { console.error(e); progresso(0, 'Não deu para carregar: ' + e.message); });
