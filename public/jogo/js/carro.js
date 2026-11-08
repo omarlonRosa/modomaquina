@@ -67,6 +67,7 @@ export class Carro {
     this.ang = ang; this.w = 0; this.dir = 0;
     this.vf = 0; this.vl = 0; this.giro = 0; this.marcha = 1; this.rpm = 900;
     this.rol = 0; this.arf = 0; this.choque = 0; this.foraDaRua = false; this.rua = null;
+    this.avaria = 0; this.noCanteiro = false; this.evento = null; this.embalo = 0;   // R (voltar pra rua) conserta
     this.atualizarModelo(0);
   }
 
@@ -79,7 +80,7 @@ export class Carro {
     this.rua = info.rua;
     const naTerra = !info.rua || info.dist > info.rua.w / 2 + 2.2 || info.rua.terra;
     this.foraDaRua = naTerra;
-    const vmax = naTerra ? 30 : 49;
+    const vmax = (naTerra ? 30 : 49) * (1 - 0.2 * (this.avaria || 0));   // avariado no canteiro: perde velocidade
     const aderencia = inp.mao ? 1.3 : naTerra ? 4.2 : 9;
 
     // motor, freio e ré
@@ -99,7 +100,7 @@ export class Carro {
 
     // direção: menos esterço em alta
     const dMax = 0.62 / (1 + Math.abs(vf) * 0.055);
-    const alvo = inp.dir * dMax;
+    const alvo = inp.dir * dMax + (this.avaria || 0) * 0.03 * Math.min(1, Math.abs(vf) / 8);   // suspensão torta puxa para a esquerda
     this.dir += (alvo - this.dir) * Math.min(1, dt * (inp.analogico ? 14 : 7));
     let wAlvo = vf * Math.tan(this.dir) / ENTRE_EIXOS;
     if (inp.mao && Math.abs(vf) > 7) wAlvo *= 1.7;
@@ -117,10 +118,14 @@ export class Carro {
     // colisão: três círculos ao longo do carro
     const nf = new THREE.Vector2(Math.sin(this.ang), Math.cos(this.ang));
     let bateu = null;
+    // canteiro alto: devagar é parede; acima de ~80 km/h o carro passa por cima, mas se arrebenta
+    // embalo: depois de subir no canteiro, segue por cima até sair do outro lado (os dois meios-fios)
+    if (this.embalo > 0) this.embalo -= dt;
+    const rapido = Math.abs(this.vf) > 22 || this.embalo > 0;
     for (const off of [1.35, 0, -1.25]) {
       const p = { x: this.pos.x + nf.x * off, z: this.pos.z + nf.y * off };
       const ox = p.x, oz = p.z;
-      const n = mundo.colidir(p, 0.86);
+      const n = mundo.colidir(p, 0.86, rapido);
       if (n) { this.pos.x += p.x - ox; this.pos.z += p.z - oz; bateu = n; }
     }
     if (bateu) {
@@ -131,6 +136,16 @@ export class Carro {
         this.w *= 0.5;
         this.choque = Math.max(this.choque, Math.min(1, -vn / 14));
       }
+    }
+    if (mundo.tocaCanteiro) {
+      const toca = mundo.tocaCanteiro(this.pos.x, this.pos.z, 1.0);
+      if (toca && this.embalo > 0) this.embalo = Math.max(this.embalo, 0.25);
+      else if (toca && !this.noCanteiro && rapido) {
+        this.embalo = 0.9;
+        this.vel.multiplyScalar(0.55); this.w *= 0.3;
+        this.choque = 1; this.avaria = Math.min(2, this.avaria + 1); this.evento = 'canteiro';
+      }
+      this.noCanteiro = toca;
     }
     // borda do mapa
     const r = Math.hypot(this.pos.x, this.pos.z), lim = mundo.raio + 40;

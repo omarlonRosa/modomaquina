@@ -344,6 +344,76 @@ export class Mundo {
     }
 
     this.postes(mapa.ruas, opts.poucosPostes);
+    this.canteiros(mapa.ruas);
+  }
+
+  // Meio-fio alto dos dois lados do canteiro central das pistas duplicadas (PA-160 e afins).
+  // Só abre onde uma rua atravessa o canteiro (retornos e cruzamentos de verdade, pelo OSM).
+  // Na colisão é parede, menos em alta: aí o carro passa por cima e se arrebenta (carro.js).
+  canteiros(ruas) {
+    const pistas = ruas.filter(r => r.mao && r.c >= 4);
+    if (!pistas.length) return;
+    // nós das ruas por posição, para achar quem cruza o canteiro
+    const chave = p => p[0].toFixed(1) + ',' + p[1].toFixed(1);
+    const nos = new Map();
+    for (const r of ruas) r.p.forEach((p, i) => { const k = chave(p); let a = nos.get(k); if (!a) nos.set(k, a = []); a.push([r, i]); });
+    const segs = [], ALT = 0.32, LARG = 0.3, PASSO = 3;
+    for (const r of pistas) {
+      // pontos onde outra rua chega pelo lado do canteiro (esquerda de quem dirige)
+      const aberturas = [];
+      r.p.forEach((p, i) => {
+        const a = r.p[Math.max(0, i - 1)], b = r.p[Math.min(r.p.length - 1, i + 1)];
+        const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz) || 1, ex = dz / L, ez = -dx / L;
+        for (const [o, k] of nos.get(chave(p)) || []) {
+          if (o === r) continue;
+          for (const kk of [k - 1, k + 1]) {
+            const q = o.p[kk]; if (!q) continue;
+            const vx = q[0] - p[0], vz = q[1] - p[1], vl = Math.hypot(vx, vz) || 1;
+            if ((vx * ex + vz * ez) / vl > 0.3) aberturas.push(p);
+          }
+        }
+      });
+      // reamostra a borda esquerda a cada PASSO metros
+      for (let i = 1; i < r.p.length; i++) {
+        const a = r.p[i - 1], b = r.p[i];
+        const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz); if (L < 0.5) continue;
+        const tx = dx / L, tz = dz / L, ex = tz, ez = -tx, off = r.w / 2 + 0.25;
+        for (let u = 0; u + PASSO <= L + 0.01; u += PASSO) {
+          const m = u + PASSO / 2, cx = a[0] + tx * m, cz = a[1] + tz * m;
+          if (Math.hypot(cx, cz) > this.raio) continue;
+          if (aberturas.some(q => Math.hypot(q[0] - cx, q[1] - cz) < 11)) continue;
+          // só onde existe a outra pista do lado esquerdo, em sentido contrário (é canteiro mesmo)
+          let temOutra = false;
+          const px = cx + ex * (off + 3), pz = cz + ez * (off + 3);
+          for (const sg of this.ruas.perto(px, pz, 18)) {
+            if (sg.rua === r || !sg.rua.mao || sg.rua.c < 4) continue;
+            const sx = sg.bx - sg.ax, sz = sg.bz - sg.az, sl = Math.hypot(sx, sz) || 1;
+            if ((sx * tx + sz * tz) / sl > -0.6) continue;
+            const [qx, qz] = pontoSeg(px, pz, sg);
+            if (Math.hypot(px - qx, pz - qz) < 14) { temOutra = true; break; }
+          }
+          if (!temOutra) continue;
+          const x0 = a[0] + tx * u + ex * off, z0 = a[1] + tz * u + ez * off, x1 = x0 + tx * PASSO, z1 = z0 + tz * PASSO;
+          segs.push([x0, z0, x1, z1]);
+        }
+      }
+    }
+    if (!segs.length) return;
+    const geos = segs.map(([x0, z0, x1, z1]) => new THREE.BoxGeometry(LARG, ALT, Math.hypot(x1 - x0, z1 - z0) + 0.02)
+      .rotateY(Math.atan2(x1 - x0, z1 - z0)).translate((x0 + x1) / 2, ALT / 2, (z0 + z1) / 2));
+    const me = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshStandardMaterial({ color: 0xe6e3da, roughness: 0.85 }));
+    this.grupo.add(me);
+    for (const [x0, z0, x1, z1] of segs) { const sg = { ax: x0, az: z0, bx: x1, bz: z1, canteiro: true }; this.paredes.add(sg, x0, z0, x1, z1); }
+    this.nCanteiro = segs.length;
+  }
+
+  tocaCanteiro(x, z, r) {
+    for (const sg of this.paredes.perto(x, z, r + 1)) {
+      if (!sg.canteiro) continue;
+      const [qx, qz] = pontoSeg(x, z, sg);
+      if (Math.hypot(x - qx, z - qz) < r) return true;
+    }
+    return false;
   }
 
   // o OSM tem poucas casas mapeadas em Parauapebas: preenche as quadras com casas
@@ -508,9 +578,10 @@ export class Mundo {
   addCirculo(x, z, r) { const s = { ax: x, az: z, bx: x, bz: z, r }; this.paredes.add(s, x - r, z - r, x + r, z + r); }
 
   // empurra um círculo para fora das paredes; devolve a normal do choque (ou null)
-  colidir(p, r) {
+  colidir(p, r, ignorarCanteiro = false) {
     let hit = null;
     for (const s of this.paredes.perto(p.x, p.z, r + 1)) {
+      if (ignorarCanteiro && s.canteiro) continue;
       const [qx, qz] = pontoSeg(p.x, p.z, s);
       const rr = r + (s.r || 0);
       let dx = p.x - qx, dz = p.z - qz; const d = Math.hypot(dx, dz);

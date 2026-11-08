@@ -198,6 +198,10 @@ function loop(t) {
   if (modo !== 'menu') {
     acc += dt;
     while (acc >= PASSO) { carro.update(PASSO, inp, mundo); acc -= PASSO; }
+    if (carro.evento === 'canteiro') {
+      hud.aviso(carro.avaria >= 2 ? 'Foi a junta homocinética! (R conserta)' : 'Pancada no canteiro! Suspensão avariada', 2.6);
+      carro.evento = null;
+    }
     if (carro.choque > choqueAntes + 0.15) som.batida(carro.choque);
     choqueAntes = carro.choque;
     racha.camDentro = !!CAMS[camModo].dentro;
