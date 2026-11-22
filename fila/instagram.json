@@ -1034,5 +1034,19 @@
       "https://modomaquina.com.br/media/carrossel/ferrari-296-cs/5.jpg",
       "https://modomaquina.com.br/media/carrossel/ferrari-296-cs/6.jpg"
     ]
+  },
+  {
+    "id": "2026-11-22-gp-las-vegas-corrida",
+    "tipo": "CARROSSEL",
+    "publicar_em": "2026-11-22T08:30:00-03:00",
+    "legenda": "Verstappen vence o caos de Las Vegas! 🏁\n\nForam 50 voltas de vácuo e troca de liderança, e o holandês da Red Bull segurou todo mundo: Norris chegou 0,639 s atrás e Piastri fechou a dobradinha da McLaren no pódio. Antonelli perdeu rendimento na última volta e ficou em 4º.\n\n🇧🇷 Bortoleto largou em 13º e terminou em 12º. Câmara largou em 15º e terminou em 16º, depois de levar um toque do Pérez que tirou o mexicano da corrida. Os comissários puniram o Pérez com 5 posições no grid do Catar.\n\nE a Ferrari? Leclerc acertou o Hamilton de novo e levou 10 s.\n\nResultado completo e como foi a corrida no link da bio: modomaquina.com.br\n\nFoi a corrida do ano pra você?\n\nFotos: Liauzh e Road Atlanta Turn 5/Wikimedia Commons (CC BY 4.0). Fontes: FIA, Motorsport.com, The Race, Grande Prêmio, Autosport.\n\n#F1 #Formula1 #LasVegasGP #Verstappen #Bortoleto #RafaelCamara #ModoMaquina",
+    "midias": [
+      "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/1.jpg",
+      "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/2.jpg",
+      "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/3.jpg",
+      "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/4.jpg",
+      "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/5.jpg",
+      "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/6.jpg"
+    ]
   }
 ]

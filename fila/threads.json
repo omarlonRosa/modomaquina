@@ -1298,5 +1298,25 @@
         "texto": "Ficha oficial, o que só a imprensa trouxe e o preço lá fora: https://modomaquina.com.br/artigos/ferrari-296-challenge-stradale-670-cv-sem-hibrido-carro-de-corrida-de-rua"
       }
     ]
+  },
+  {
+    "id": "2026-11-22-gp-las-vegas-corrida",
+    "publicar_em": "2026-11-22T08:35:00-03:00",
+    "posts": [
+      {
+        "texto": "Verstappen venceu o GP de Las Vegas na madrugada de domingo, 22/11, segurando 50 voltas de vácuo: Norris 0,639 s atrás e Piastri em 3º. Bortoleto terminou em 12º e Câmara em 16º, depois de levar um toque do Pérez, que foi punido com 5 posições no grid do Catar. Corrida do ano?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/gp-las-vegas-corrida/6.jpg"
+        ]
+      },
+      {
+        "texto": "Resultado oficial, o toque na Ferrari e como foi a corrida dos brasileiros: https://modomaquina.com.br/artigos/gp-las-vegas-f1-2026-resultado-verstappen-vence-bortoleto-camara"
+      }
+    ]
   }
 ]
