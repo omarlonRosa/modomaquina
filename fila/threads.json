@@ -1378,5 +1378,25 @@
         "texto": "O que o comunicado diz e o que fica de fora: https://modomaquina.com.br/artigos/stellantis-sai-wec-formula-e-peugeot-9x8-citroen-opel"
       }
     ]
+  },
+  {
+    "id": "2026-11-23-captiva-phev",
+    "publicar_em": "2026-11-23T14:25:00-03:00",
+    "posts": [
+      {
+        "texto": "O Captiva PHEV chegou: é o 1º híbrido plug-in da Chevrolet no Brasil 🔌\n\n227 cv, bateria de 20,5 kWh, mais de 1.000 km de autonomia total e fabricação no Ceará. Preço de R$ 199.990, segundo a imprensa (a marca ainda não publicou). Só não é flex.\n\nCaptiva plug-in ou Song Pro?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/captiva-phev/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/captiva-phev/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/captiva-phev/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/captiva-phev/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/captiva-phev/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/captiva-phev/6.jpg"
+        ]
+      },
+      {
+        "texto": "Ficha oficial, o que é só da imprensa e a dúvida da recarga: https://modomaquina.com.br/artigos/chevrolet-captiva-phev-hibrido-plug-in-brasil-preco-199-mil-227-cv"
+      }
+    ]
   }
 ]
