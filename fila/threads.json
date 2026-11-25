@@ -1438,5 +1438,45 @@
         "texto": "A tabela de chassis e como agendar: https://modomaquina.com.br/artigos/recall-honda-crf-250r-450r-2025-2026-suporte-guidao"
       }
     ]
+  },
+  {
+    "id": "2026-11-25-denza-bao3",
+    "publicar_em": "2026-11-25T13:55:00-03:00",
+    "posts": [
+      {
+        "texto": "Estreia mundial no Brasil ⚡\n\nA Denza, marca de luxo da BYD, mostrou o Bao 3 nesta quarta (25/11): SUV elétrico de 354 cv, até 427 km de autonomia (Inmetro) e 10% a 97% de carga em 9 minutos no carregador Flash Charging. Três porta-malas e console que gela. Preço só em 1º/12.\n\nBao 3 ou Volvo EX40?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/denza-bao3/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/denza-bao3/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/denza-bao3/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/denza-bao3/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/denza-bao3/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/denza-bao3/6.jpg"
+        ]
+      },
+      {
+        "texto": "Ficha completa, o que a Denza confirmou e as estimativas de preço: https://modomaquina.com.br/artigos/denza-bao-3-suv-eletrico-luxo-byd-estreia-mundial-brasil-354-cv"
+      }
+    ]
+  },
+  {
+    "id": "2026-11-25-vw-hibrido-flex",
+    "publicar_em": "2026-11-25T14:15:00-03:00",
+    "posts": [
+      {
+        "texto": "A VW vai ter híbrido flex nacional 🌱⚡\n\nO motor 1.5 TSI Evo2 Híbrido Flex foi revelado nesta quarta (25/11): híbrido pleno, sem tomada, roda com etanol ou gasolina e sai da fábrica Anchieta (SP) no 2º semestre de 2027. Potência, consumo e o nome do carro a VW ainda não contou.\n\nVocê compraria um?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/vw-hibrido-flex/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/vw-hibrido-flex/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/vw-hibrido-flex/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/vw-hibrido-flex/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/vw-hibrido-flex/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/vw-hibrido-flex/6.jpg"
+        ]
+      },
+      {
+        "texto": "O que a VW confirmou, o que é só especulação e a conta do etanol: https://modomaquina.com.br/artigos/volkswagen-motor-1-5-tsi-evo2-hibrido-flex-primeiro-hibrido-brasil-2027"
+      }
+    ]
   }
 ]
