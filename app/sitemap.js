@@ -7,6 +7,7 @@ export default function sitemap() {
     { url: base, lastModified: sortedPosts()[0]?.date, changeFrequency: 'daily', priority: 1 },
     ...POSTS.map((p) => ({ url: `${base}/artigos/${p.slug}`, lastModified: p.updated || p.date, priority: 0.8 })),
     ...EDITORIAS.map((e) => ({ url: `${base}/editoria/${e.slug}`, priority: 0.6 })),
+    { url: `${base}/achados`, priority: 0.5 },
     { url: `${base}/sobre`, priority: 0.4 },
     { url: `${base}/anuncie`, priority: 0.4 },
     { url: `${base}/contato`, priority: 0.4 },

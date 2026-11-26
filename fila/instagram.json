@@ -1174,5 +1174,14 @@
       "https://modomaquina.com.br/media/carrossel/williams-teto-gastos/5.jpg",
       "https://modomaquina.com.br/media/carrossel/williams-teto-gastos/6.jpg"
     ]
+  },
+  {
+    "id": "2026-11-26-achados-lancamento-story",
+    "tipo": "STORY",
+    "publicar_em": "2026-11-26T21:01:00-03:00",
+    "legenda": "",
+    "midias": [
+      "https://modomaquina.com.br/media/stories/achados-lancamento.jpg"
+    ]
   }
 ]
