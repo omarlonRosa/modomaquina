@@ -1513,5 +1513,45 @@
         "texto": "Entre por aqui: https://modomaquina.com.br/achados"
       }
     ]
+  },
+  {
+    "id": "2026-11-26-ford-gt41",
+    "publicar_em": "2026-11-26T22:25:00-03:00",
+    "posts": [
+      {
+        "texto": "A Ford revelou nesta quinta (26/11) o GT41, hypercar com que volta à briga pela vitória geral em Le Mans. V8 5.4 aspirado feito pela própria Ford, nome pelas 41 polegadas de altura (a lógica do GT40) e estreia no Catar em março de 2027.\n\nSessenta anos depois do 1-2-3 de 1966. Ganha de primeira?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/ford-gt41/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/ford-gt41/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/ford-gt41/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/ford-gt41/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/ford-gt41/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/ford-gt41/6.jpg"
+        ]
+      },
+      {
+        "texto": "Ficha, testes e os recados escondidos na pintura: https://modomaquina.com.br/artigos/ford-gt41-hypercar-le-mans-2027-v8-aspirado"
+      }
+    ]
+  },
+  {
+    "id": "2026-11-27-haas-bearman-2027",
+    "publicar_em": "2026-11-27T08:05:00-03:00",
+    "posts": [
+      {
+        "texto": "Grid da F1 2027 fechado: a Haas renovou com Oliver Bearman, que vai ser o parceiro do Rafa Câmara. São 22 pilotos em 11 equipes, com dois brasileiros titulares (Câmara e Bortoleto).\n\nCâmara termina 2027 na frente do Bearman?",
+        "midias": [
+          "https://modomaquina.com.br/media/carrossel/haas-bearman-2027/1.jpg",
+          "https://modomaquina.com.br/media/carrossel/haas-bearman-2027/2.jpg",
+          "https://modomaquina.com.br/media/carrossel/haas-bearman-2027/3.jpg",
+          "https://modomaquina.com.br/media/carrossel/haas-bearman-2027/4.jpg",
+          "https://modomaquina.com.br/media/carrossel/haas-bearman-2027/5.jpg",
+          "https://modomaquina.com.br/media/carrossel/haas-bearman-2027/6.jpg"
+        ]
+      },
+      {
+        "texto": "O grid completo de 2027 e por que a renovação demorou: https://modomaquina.com.br/artigos/haas-renova-bearman-f1-2027-grid-completo-camara-bortoleto"
+      }
+    ]
   }
 ]
